@@ -1,1 +1,1 @@
-qemu-system-x86_64 -drive file=build/floppy.img,format=raw
+qemu-system-x86_64 -drive format=raw,file=build/os.img
