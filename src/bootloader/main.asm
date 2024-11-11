@@ -27,7 +27,7 @@ ebr_volume_id:             db 0x12, 0x34, 0x56, 0x78 ; serial number, can be ign
 ebr_volume_label:          db 'FIRST OS   ' ; 11 byte
 ebr_system_id:             db 'FAT12   '    ; 8 byte
 
-%define ENDL 0x0D, 0x0A
+%define CRLF 0x0D, 0x0A
 
 start:
     jmp main
@@ -75,7 +75,7 @@ main:
 .halt:
     jmp .halt
 
-msg_hello: db 'Hello World!', ENDL, 0x0
+msg_hello: db 'Hello World!', CRLF, 0x0
 
 times 510-($-$$) db 0
 dw 0xAA55
