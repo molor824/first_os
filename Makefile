@@ -1,6 +1,6 @@
 .PHONY: all os_image kernel bootloader clean always tools_fat
 
-all: os_image tools_fat
+all: os_image
 
 os_image: build/os.img
 
@@ -18,12 +18,6 @@ build/bootloader.bin: always
 kernel: build/kernel.bin
 build/kernel.bin: always
 	nasm src/kernel/main.asm -f bin -o build/kernel.bin
-
-tools_fat: build/tools/fat
-
-build/tools/fat: always tools/fat/fat.c
-	mkdir -p build/tools
-	gcc -g -o build/tools/fat tools/fat/fat.c
 
 always:
 	mkdir -p build

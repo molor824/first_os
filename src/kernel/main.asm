@@ -1,7 +1,7 @@
-org 0x7C00
+org 0x0
 bits 16
 
-%define ENDL 0x0D, 0x0A
+%define CRLF 0x0D, 0x0A
 
 start:
     jmp main
@@ -30,26 +30,14 @@ puts:
     ret
 
 main:
-    ; setup data segments
-    mov ax, 0             ; you cant write to ds/es directly
-    mov ds, ax
-    mov es, ax
-    
-    ; setup stack
-    mov ss, ax
-    mov sp, 0x7C00        ; stack grows downwards
+    ; for now we use same stack as the bootloader
 
     ; print message
     mov si, msg_hello
     call puts
 
+.halt:
     cli
     hlt
 
-.halt:
-    jmp .halt
-
-msg_hello: db 'Hello World!', ENDL, 0x0
-
-times 510-($-$$) db 0
-dw 0xAA55
+msg_hello: db 'Hello World! from kernel', CRLF, 0x0
