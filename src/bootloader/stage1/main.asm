@@ -324,7 +324,7 @@ wait_key_and_reboot:
 msg_loading: db 'Loading...', CRLF, 0x0
 msg_read_failed: db 'Failed to read from disk!', CRLF, 0x0
 msg_kernel_not_found: db 'Kernel not found!', CRLF, 0x0
-file_kernel_bin: db 'KERNEL  BIN'
+file_kernel_bin: db 'STAGE2  BIN'
 kernel_cluster: dw 0
 
 KERNEL_LOAD_SEGMENT equ 0x2000
