@@ -48,7 +48,12 @@ uint8_t vga_color = VGA_COLOR_ENTRY(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 uint16_t* vga_buf = (uint16_t*)VGA_MEMORY;
 
 void* memcpy(void *dst, const void *src, size_t size) {
-    for (size_t i = 0; i < size; i++) {
+    size_t word_size = size / sizeof(size_t);
+    for (size_t i = 0; i < word_size; i++) {
+        ((size_t*)dst)[i] = ((const size_t*)src)[i];
+    }
+    size_t start = size - size % sizeof(size_t);
+    for (size_t i = start; i < size; i++) {
         ((char*)dst)[i] = ((const char*)src)[i];
     }
     return dst;
@@ -141,10 +146,10 @@ void kernel_main(void) {
     vga_puts("Welcome to My first OS!\n");
 
     for (size_t i = 0; ; i++) {
-        vga_putc('\r');
         char buffer[0x100];
         size_t count = u32toa(i, buffer);
         buffer[count] = '\0';
         vga_puts(buffer);
+        vga_putc('\n');
     }
 }
