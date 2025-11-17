@@ -1,35 +1,24 @@
-BUILD_DIR="build"
-SRC_DIR="src"
+BUILD_DIR = build
+SRC_DIR = src
 
-.PHONY: all os_image kernel bootloader clean always tools_fat
+GCC = i686-elf-gcc
+QEMU = qemu-system-i386
 
-all: os_image
+.PHONY: all build qemu
 
-os_image: $(BUILD_DIR)/os.img
+all: build $(BUILD_DIR)/os.bin
 
-$(BUILD_DIR)/os.img: bootloader kernel
-	dd if=/dev/zero of=$(BUILD_DIR)/os.img bs=512 count=2880
-	mkfs.fat -F 12 -n "NBOS" $(BUILD_DIR)/os.img
-	dd if=$(BUILD_DIR)/stage1.bin of=$(BUILD_DIR)/os.img conv=notrunc
-	mcopy -i $(BUILD_DIR)/os.img $(BUILD_DIR)/stage2.bin "::stage2.bin"
-	mcopy -i $(BUILD_DIR)/os.img $(BUILD_DIR)/kernel.bin "::kernel.bin"
-	mcopy -i $(BUILD_DIR)/os.img test.txt "::test.txt"
+$(BUILD_DIR)/os.bin: $(BUILD_DIR)/boot.o $(BUILD_DIR)/kernel.o $(SRC_DIR)/linker.ld
+	$(GCC) -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/os.bin -ffreestanding -O2 -nostdlib $(BUILD_DIR)/boot.o $(BUILD_DIR)/kernel.o -lgcc
 
-bootloader: stage1 stage2
-stage1: $(BUILD_DIR)/stage1.bin
-$(BUILD_DIR)/stage1.bin: always
-	make -C $(SRC_DIR)/bootloader/stage1 BUILD_DIR=$(abspath $(BUILD_DIR))
+$(BUILD_DIR)/boot.o: $(SRC_DIR)/boot.s
+	$(GCC) -c $(SRC_DIR)/boot.s -o $(BUILD_DIR)/boot.o
 
-stage2: $(BUILD_DIR)/stage2.bin
-$(BUILD_DIR)/stage2.bin: always
-	make -C $(SRC_DIR)/bootloader/stage2 BUILD_DIR=$(abspath $(BUILD_DIR))
+$(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel.c
+	$(GCC) -c $(SRC_DIR)/kernel.c -o $(BUILD_DIR)/kernel.o -std=gnu99 -ffreestanding -O2 -Wall
 
-kernel: $(BUILD_DIR)/kernel.bin
-$(BUILD_DIR)/kernel.bin: always
-	make -C $(SRC_DIR)/kernel BUILD_DIR=$(abspath $(BUILD_DIR))
-
-always:
+build:
 	mkdir -p $(BUILD_DIR)
 
-clean:
-	rm -rf $(BUILD_DIR)/*
+qemu:
+	$(QEMU) -kernel $(BUILD_DIR)/os.bin
