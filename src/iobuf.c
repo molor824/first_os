@@ -39,7 +39,7 @@ void buf_remove(size_t i) {
 void buf_putc(char c) {
     switch (c) {
         case '\r': // set cursor back to newline, in this case
-            while (*buf_get_char(buf_cursor - 1) != '\n') {
+            while (buf_cursor > 0 && *buf_get_char(buf_cursor - 1) != '\n') {
                 buf_cursor--;
             }
             break;
