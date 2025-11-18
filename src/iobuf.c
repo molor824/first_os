@@ -5,7 +5,7 @@ uint16_t buffer[IO_BUF_SIZE];
 size_t buf_position;
 size_t buf_size;
 size_t buf_cursor;
-uint8_t buf_color;
+uint8_t buf_color = VGA_COLOR_ENTRY(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 
 size_t buf_index(size_t i) {
     return (buf_position + i) % IO_BUF_SIZE;

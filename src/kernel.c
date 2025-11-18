@@ -38,8 +38,8 @@ void kernel_main(void) {
     for (size_t i = 0; ; i++) {
         char buffer[0x100];
         size_t count = u32toa(i, buffer);
+        buf_putc('\r');
         buf_write(buffer, count);
-        buf_putc('\n');
         buf_flush();
     }
 }
