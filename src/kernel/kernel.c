@@ -29,8 +29,26 @@ size_t u32toa(uint32_t a, char *dst) {
 
     return count;
 }
+size_t i32toa(int32_t a, char *dst) {
+    if (a < 0) {
+        if (dst) {
+            dst[0] = '-';
+            return u32toa(-a, &dst[1]) + 1;
+        } else {
+            return u32toa(-a, dst) + 1;
+        }
+    }
+    return u32toa(a, dst);
+}
+
+// Constructors, and destructors
+extern void _init(void);
+extern void _fini(void);
 
 void kernel_main(void) {
+    _init();
+
+    buf_puts("Initialized constructors\n");
     buf_puts("Hello, World!\n");
     buf_puts("Welcome to My first OS!\n");
     buf_flush();
@@ -42,4 +60,6 @@ void kernel_main(void) {
         buf_write(buffer, count);
         buf_flush();
     }
+
+    _fini();
 }

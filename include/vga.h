@@ -30,6 +30,6 @@ typedef enum vga_color {
 #define VGA_HEIGHT 25
 #define VGA_MEMORY 0xB8000
 
-uint16_t* vga_get(size_t r, size_t c);
+void vga_set(size_t r, size_t c, uint16_t entry);
 
 #endif

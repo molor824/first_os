@@ -1,4 +1,5 @@
 #include <vga.h>
+#include <stdbool.h>
 #include <iobuf.h>
 
 uint16_t buffer[IO_BUF_SIZE];
@@ -72,11 +73,13 @@ void buf_flush(void) {
     size_t cursor = buf_size;
     for (size_t row = 0; row < VGA_HEIGHT && cursor > 0; row++) {
         for (size_t col = 0; col < VGA_WIDTH && cursor > 0; col++) {
-            char ch = *buf_get_char(cursor - 1);
             cursor--;
+            char ch = *buf_get_char(cursor);
             if (ch == '\n') break;
         }
     }
+
+    if (*buf_get_char(cursor) == '\n') cursor++;
     
     // starting from cursor, iterate until row reaches past
     for (size_t row = 0; row < VGA_HEIGHT; row++) {
@@ -86,10 +89,10 @@ void buf_flush(void) {
             char ch = (char)entry;
             cursor++;
             if (ch == '\n') break;
-            else *vga_get(row, col) = entry;
+            else vga_set(row, col, entry);
         }
         for (; col < VGA_WIDTH; col++) {
-            *vga_get(row, col) = 0;
+            vga_set(row, col, 0);
         }
     }
 }
