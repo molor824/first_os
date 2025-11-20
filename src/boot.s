@@ -18,7 +18,7 @@
 .section .bootstrap_stack, "aw", @nobits
 .align 16
 stack_bottom:
-.skip 16384 // 16KiB
+.skip 0x100000 // 1 MB stack
 stack_top:
 
 // Preallocate pages used for paging.
@@ -81,7 +81,7 @@ _start:
 
     // Map the page table to both virtual addresses 0x0 and 0xC0000000
     // NOTE: the kernel itself is in page 768 (because that's where 0xC0000000 is)
-    // We need to map the physical address to page 768
+    // We need to map the physical address to page 768 along with write-protect and present bits
     // But also page 0 since that's where we are currently, and we need to jump to virtual address
     movl $(boot_page_table_1 - KERNEL_ADDR + 0x003), boot_page_directory - KERNEL_ADDR + 0
     movl $(boot_page_table_1 - KERNEL_ADDR + 0x003), boot_page_directory - KERNEL_ADDR + 768 * 4
@@ -114,7 +114,9 @@ _start:
     // setup stack
     mov $stack_top, %esp
 
+    call _init
     call kernel_main
+    call _fini
 
     // put in halt
     cli
