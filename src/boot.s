@@ -80,6 +80,9 @@ _start:
     // would instead page fault if there was no identity mapping.
 
     // Map the page table to both virtual addresses 0x0 and 0xC0000000
+    // NOTE: the kernel itself is in page 768 (because that's where 0xC0000000 is)
+    // We need to map the physical address to page 768
+    // But also page 0 since that's where we are currently, and we need to jump to virtual address
     movl $(boot_page_table_1 - KERNEL_ADDR + 0x003), boot_page_directory - KERNEL_ADDR + 0
     movl $(boot_page_table_1 - KERNEL_ADDR + 0x003), boot_page_directory - KERNEL_ADDR + 768 * 4
 
