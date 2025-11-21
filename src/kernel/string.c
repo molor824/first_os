@@ -1,4 +1,4 @@
-#include <string.h>
+#include "string.h"
 
 void* memcpy(void *dst, const void *src, size_t n) {
     size_t word_size = n / sizeof(size_t);

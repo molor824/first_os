@@ -3,7 +3,6 @@ BUILD_DIR=build
 SRC_DIR=src
 KERNEL_BUILD_DIR=build/kernel
 KERNEL_SRC_DIR=src/kernel
-INCL_DIR=include
 
 GCC=i686-elf-gcc
 QEMU=qemu-system-i386
@@ -36,14 +35,14 @@ all: build $(OS_KERNEL)
 # NOTE: The orders must not change!!!
 LINK_OBJS=$(CRTI_OBJ) $(CRTBEGIN_OBJ) $(BOOT_OBJ) $(KERNEL_OBJECTS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
-$(OS_KERNEL): $(LINK_OBJS) $(LINKER_SRC)
+$(OS_KERNEL): $(LINK_OBJS) $(LINKER_SRC) Makefile
 	$(GCC) -T $(LINKER_SRC) -o $(OS_KERNEL) -nostdlib -lgcc $(LINK_OBJS)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
-	$(GCC) -c -o $@ $(CFLAGS) $^
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.s Makefile
+	$(GCC) -c -o $@ $(CFLAGS) $<
 
-$(KERNEL_BUILD_DIR)/%.o: $(KERNEL_SRC_DIR)/%.c
-	$(GCC) -c -o $@ $(CFLAGS) -I $(INCL_DIR) $^
+$(KERNEL_BUILD_DIR)/%.o: $(KERNEL_SRC_DIR)/%.c Makefile
+	$(GCC) -c -o $@ $(CFLAGS) $<
 
 build:
 	mkdir -p $(BUILD_DIR)

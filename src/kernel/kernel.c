@@ -1,8 +1,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
-#include <iobuf.h>
+#include "string.h"
+#include "iobuf.h"
 
 #if defined(__linux__)
 #error "The compiler is not cross-compiler"
@@ -68,7 +68,7 @@ void kernel_main(void) {
 
     for (size_t i = 0; ; i++) {
         char buffer[0x100];
-        size_t count = u32toa(i, buffer, 2);
+        size_t count = u32toa(i, buffer, 16);
         buf_putc('\r');
         buf_write(buffer, count);
         buf_flush();

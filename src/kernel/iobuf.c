@@ -1,6 +1,6 @@
-#include <vga.h>
 #include <stdbool.h>
-#include <iobuf.h>
+#include "vga.h"
+#include "iobuf.h"
 
 uint16_t buffer[IO_BUF_SIZE];
 size_t buf_position;

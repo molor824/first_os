@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#define IO_BUF_SIZE 0x1000
+#define IO_BUF_SIZE 0x10000
 
 extern uint16_t buffer[IO_BUF_SIZE];
 extern size_t buf_position;
