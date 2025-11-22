@@ -112,7 +112,7 @@ _start:
     movl %ecx, %cr3
 
     // setup stack
-    mov $stack_top, %esp
+    movl $stack_top, %esp
 
     call _init
     call kernel_main
