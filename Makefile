@@ -26,17 +26,17 @@ CRTEND_OBJ=$(shell $(GCC) $(CFLAGS) -print-file-name=crtend.o)
 CRTN_OBJ=$(BUILD_DIR)/crtn.o
 
 LINKER_SRC=$(SRC_DIR)/linker.ld
-OS_KERNEL=$(BUILD_DIR)/os.kernel
+OS_BIN=$(BUILD_DIR)/first_os.bin
 
-.PHONY: all build qemu clean
+.PHONY: all build qemu clean bootable
 
-all: build $(OS_KERNEL)
+all: build $(OS_BIN)
 
 # NOTE: The orders must not change!!!
 LINK_OBJS=$(CRTI_OBJ) $(CRTBEGIN_OBJ) $(BOOT_OBJ) $(KERNEL_OBJECTS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
-$(OS_KERNEL): $(LINK_OBJS) $(LINKER_SRC) Makefile
-	$(GCC) -T $(LINKER_SRC) -o $(OS_KERNEL) -nostdlib -lgcc $(LINK_OBJS)
+$(OS_BIN): $(LINK_OBJS) $(LINKER_SRC) Makefile
+	$(GCC) -T $(LINKER_SRC) -o $(OS_BIN) -nostdlib -lgcc $(LINK_OBJS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s Makefile
 	$(GCC) -c -o $@ $(CFLAGS) $<
@@ -49,10 +49,24 @@ build:
 	mkdir -p $(KERNEL_BUILD_DIR)
 
 qemu:
-	$(QEMU) -kernel $(OS_KERNEL)
+	$(QEMU) -kernel $(OS_BIN)
 
 qemu-debug:
-	$(QEMU) -s -S -kernel $(OS_KERNEL)
+	$(QEMU) -s -S -kernel $(OS_BIN)
 
 clean:
-	rm -f $(KERNEL_OBJECTS) $(BOOT_OBJ) $(CRTI_OBJ) $(CRTN_OBJ) $(OS_KERNEL)
+	rm -rf $(BUILD_DIR)/*
+
+OS_IMG=$(BUILD_DIR)/first_os.img
+GRUB_CFG=$(SRC_DIR)/grub.cfg
+ISO_DIR=$(BUILD_DIR)/isodir
+ISO_OS=$(ISO_DIR)/boot/first_os.bin
+ISO_GRUB=$(ISO_DIR)/boot/grub/grub.cfg
+
+bootable: $(OS_IMG)
+
+$(OS_IMG): $(GRUB_CFG) $(OS_BIN)
+	mkdir -p $(ISO_DIR)/boot/grub
+	cp $(OS_BIN) $(ISO_OS)
+	cp $(GRUB_CFG) $(ISO_GRUB)
+	grub-mkrescue -o $(OS_IMG) $(ISO_DIR)
