@@ -57,16 +57,16 @@ qemu-debug:
 clean:
 	rm -rf $(BUILD_DIR)/*
 
-OS_IMG=$(BUILD_DIR)/first_os.img
+OS_ISO=$(BUILD_DIR)/first_os.iso
 GRUB_CFG=$(SRC_DIR)/grub.cfg
 ISO_DIR=$(BUILD_DIR)/isodir
-ISO_OS=$(ISO_DIR)/boot/first_os.bin
-ISO_GRUB=$(ISO_DIR)/boot/grub/grub.cfg
+ISO_OS_BIN=$(ISO_DIR)/boot/first_os.bin
+ISO_GRUB_CFG=$(ISO_DIR)/boot/grub/grub.cfg
 
-bootable: $(OS_IMG)
+bootable: $(OS_ISO)
 
-$(OS_IMG): $(GRUB_CFG) $(OS_BIN)
+$(OS_ISO): $(GRUB_CFG) $(OS_BIN)
 	mkdir -p $(ISO_DIR)/boot/grub
-	cp $(OS_BIN) $(ISO_OS)
-	cp $(GRUB_CFG) $(ISO_GRUB)
-	grub-mkrescue -o $(OS_IMG) $(ISO_DIR)
+	cp $(OS_BIN) $(ISO_OS_BIN)
+	cp $(GRUB_CFG) $(ISO_GRUB_CFG)
+	grub-mkrescue -o $(OS_ISO) $(ISO_DIR)
