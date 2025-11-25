@@ -1,6 +1,7 @@
-#ifndef _IO_BUF_H
-#define _IO_BUF_H
+#ifndef __IO_BUF_H
+#define __IO_BUF_H
 
+#include <stdint.h>
 #include <stddef.h>
 
 #define IO_BUF_SIZE 0x10000

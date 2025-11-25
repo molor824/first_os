@@ -1,4 +1,4 @@
-CFLAGS=-ffreestanding -nostdlib -lgcc -std=gnu99 -Wall
+CFLAGS=-ffreestanding -nostdlib -lgcc -std=gnu11 -Wall -m32
 BUILD_DIR=build
 SRC_DIR=src
 KERNEL_BUILD_DIR=build/kernel
@@ -35,14 +35,16 @@ all: build $(OS_BIN)
 # NOTE: The orders must not change!!!
 LINK_OBJS=$(CRTI_OBJ) $(CRTBEGIN_OBJ) $(BOOT_OBJ) $(KERNEL_OBJECTS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
+# NOTE TO SELF: Put -lgcc after all the input objects to avoid "undefined reference to `__aeabi_idiv`" errors
+# Generally it seems to be a good idea to put inputs before libraries
 $(OS_BIN): $(LINK_OBJS) $(LINKER_SRC) Makefile
-	$(GCC) -T $(LINKER_SRC) -o $(OS_BIN) -nostdlib -lgcc $(LINK_OBJS)
+	$(GCC) $(LINK_OBJS) -T $(LINKER_SRC) $(CFLAGS) -o $(OS_BIN)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s Makefile
-	$(GCC) -c -o $@ $(CFLAGS) $<
+	$(GCC) $< $(CFLAGS) -g -c -o $@
 
 $(KERNEL_BUILD_DIR)/%.o: $(KERNEL_SRC_DIR)/%.c Makefile
-	$(GCC) -c -o $@ $(CFLAGS) $<
+	$(GCC) $< $(CFLAGS) -g -c -o $@
 
 build:
 	mkdir -p $(BUILD_DIR)
