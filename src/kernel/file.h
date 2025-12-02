@@ -2,7 +2,7 @@
 #define __FILE_H
 
 #define STDOUT 0
-#define MAX_FILE_HANDLES 64
+#define MAX_FILE_HANDLES 0x10000
 
 typedef int (*read_cb)(void *data, void *buf, unsigned size);
 typedef int (*write_cb)(void *data, const void *buf, unsigned size);
