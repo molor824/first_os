@@ -18,7 +18,7 @@
 .long CHECKSUM
 
 error_kernel_mmap_fail:
-.string "ERROR: KERNEL MMAP FAIL, REMAINING KERNEL LACKS PAGES TO BE LOADED ONTO"
+.string "ERROR: KERNEL MMAP FAIL"
 
 // Define stack
 .section .bootstrap_stack, "aw", @nobits
