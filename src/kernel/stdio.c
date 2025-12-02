@@ -153,9 +153,8 @@ int vsprintf(char *str, const char *format, va_list ap) {
     // Create temporary file handle
     file_handle_t handle = {
         .write = vsprintf_write,
-        .data = &data
     };
-    int fd = file_register(handle);
+    int fd = file_register((file_ptr_t){.data = &data, .handle = &handle});
     int count = vfprintf(fd, format, ap);
     file_unregister(fd); // No need for closing as we didn't define it
     return count;

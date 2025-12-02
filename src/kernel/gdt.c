@@ -1,9 +1,10 @@
 #include "gdt.h"
+#include "file.h"
 #include "stdio.h"
 
 uint64_t entries[6];
 
-__attribute__((constructor)) void setup_gdt(void) {
+__attribute__((constructor(FILE_CRT_PRIORITY - 1))) void setup_gdt(void) {
     // Null segment
     entries[0] = 0;
 

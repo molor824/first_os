@@ -33,19 +33,35 @@ SECTIONS
 	{
 		*(.text)
 	}
-	.rodata ALIGN(4K) : AT(ADDR(.rodata) - 0xC0000000)
+	.rodata ALIGN(4K) :
 	{
 		*(.rodata)
 	}
-	.data ALIGN(4K) : AT(ADDR(.data) - 0xC0000000)
+	.data ALIGN(4K) :
 	{
 		*(.data)
 	}
-	.bss ALIGN(4K) : AT(ADDR(.bss) - 0xC0000000)
+	.bss ALIGN(4K) :
 	{
 		*(COMMON)
 		*(.bss)
 		*(.bootstrap_stack)
+	}
+	.ctors :
+	{
+		__CTOR_LIST__ = .;
+		KEEP(*(SORT_BY_NAME(.ctors.*)))
+		KEEP(*(.ctors))
+		__CTOR_END__ = .;
+		LONG(0) LONG(0)
+	}
+	.dtors :
+	{
+		__DTOR_LIST__ = .;
+		KEEP(*(SORT_BY_NAME(.dtors.*)))
+		KEEP(*(.dtors))
+		__DTOR_END__ = .;
+		LONG(0) LONG(0)
 	}
 	/* symbol that indicates the end address of kernel */
 	_kernel_end = .;
