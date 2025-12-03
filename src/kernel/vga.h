@@ -28,7 +28,8 @@ typedef enum vga_color {
 
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
-#define VGA_MEMORY 0xC03FF000
+
+extern uint16_t VGA_BUFFER_ADDR;
 
 void vga_set(size_t r, size_t c, uint16_t entry);
 

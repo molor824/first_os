@@ -3,12 +3,17 @@
 .set FLAGS, ALIGN | MEMINFO // Multiboot flag field
 .set MAGIC, 0x1BADB002 // Magic number, finds bootloader
 .set CHECKSUM, -(MAGIC + FLAGS) // Checksum
-.set KERNEL_ADDR, 0xC0000000 // Kernel virtual base address
+.set KERNEL_PDE_INDEX, 768
+.set KERNEL_ADDR, KERNEL_PDE_INDEX*0x400000 // Kernel virtual base address
+.set PDE_COUNT, 1
+.set VGA_BUFFER_ADDR, KERNEL_ADDR+PDE_COUNT*0x400000-0x1000
 .set VGA_BUFFER_PHYS_ADDR, 0x000B8000
-.set VGA_BUFFER_ADDR, 0xC03FF000
 .set VGA_WIDTH, 80
 .set VGA_HEIGHT, 25
 .set ERROR_COLOR, 4<<4
+
+.global VGA_BUFFER_ADDR
+.global KERNEL_ADDR
 
 // Declare multiboot header that marks the program as kernel
 .section .multiboot.data, "aw"
@@ -18,7 +23,7 @@
 .long CHECKSUM
 
 error_kernel_mmap_fail:
-.string "ERROR: KERNEL MMAP FAIL"
+.string "ERROR: KERNEL MMAP FAIL\n(PTE INSUFFICIENT)"
 
 // Define stack
 .section .bootstrap_stack, "aw", @nobits
@@ -33,7 +38,7 @@ stack_top:
 page_directory:
 .skip 4096
 boot_page_table_1:
-.skip 4096
+.skip 4096*PDE_COUNT
 
 // Further pages may be needed if kernel is large.
 
@@ -52,13 +57,13 @@ panic:
     mov $0, %esi // vga col
 
     // while (*str != 0)
-.panic_loop_start:
+0:
     cmpb $0, (%eax)
     je abort
 
     // if (*str == '\n') skip to newline
     cmpb $0xA, (%eax)
-    je .panic_newline
+    je 1f
 
     // VGA_BUFFER[row*WIDTH+col]=(*str)|(color<<8)
     mov %edi, %ebx
@@ -74,45 +79,44 @@ panic:
     inc %esi
     // if (col >= VGA_WIDTH) col = 0; row++;
     cmp $VGA_WIDTH, %esi
-    jl .panic_skip_newline
+    jl 2f
 
-.panic_newline:
+1:
     mov $0, %esi
     inc %edi
 
-.panic_skip_newline:
+2:
     // str++;
     inc %eax
-    jmp .panic_loop_start
+    jmp 0b
 
 .global abort
 .type abort, @function
 abort:
     cli
-.halt:
+0:
     hlt
-    jmp .halt
+    jmp 0b
 
 .global _start
 .type _start, @function
 _start:
+.set KERNEL_PAGE_COUNT, PDE_COUNT*1024-1
     // Setup stack (physical addressed stack)
     mov $(stack_top - KERNEL_ADDR), %esp
     // Physical address of boot_page_table_1
     mov $(boot_page_table_1 - KERNEL_ADDR), %edi
     // First address to map is address 0
     mov $0, %esi
-    // NOTE: Kernel should be mapped on first 1023 pages, as the last 1024th page is reserved for VGA buffer!
-    mov $1023, %ecx
 
     // Looping through pages and mapping physical addresses within kernel range as present and writable
-.while_start:
-    cmp $0, %ecx  // if (ecx <= 0) end loop early
-    jle .while_end
+0:
     cmp $_kernel_start, %esi // if (esi < physical_kernel_start) skip to increment
-    jl .while_inc
+    jl 1f
+    cmp $(KERNEL_PAGE_COUNT*4096), %esi  // while (esi < 1023*4096)
+    jge 0f
     cmp $(_kernel_end - KERNEL_ADDR), %esi // if (esi >= physical_kernel_end) end loop
-    jge .while_end
+    jge 0f
 
     // Mark physical address as present and writable
     // NOTE: this also maps .text and .rodata section as writable, mind security and mark them as non-writable
@@ -120,28 +124,25 @@ _start:
     or $0x003, %edx
     mov %edx, (%edi)
 
-.while_inc:
+1:
     // Size of page is 4096 bytes
     add $4096, %esi
     // Size of entries in boot_page_table_1 is 4 bytes
     add $4, %edi
-    // Decrement ecx
-    dec %ecx
     // Loop to the next entry
-    jmp .while_start
-
-.while_end:
+    jmp 0b
+0:
     // Check if all part of kernel is mapped
     // otherwise print error to vga buffer and abort
 
     // if (esi < physical_kernel_end) panic and abort
     cmp $(_kernel_end - KERNEL_ADDR), %esi
-    jge .skip_kernel_check
+    jge 0f
     lea error_kernel_mmap_fail, %eax
     call panic
-.skip_kernel_check:
+0:
     // Map VGA memory buffer to 0xC03FF000 as "present" and "writable"
-    movl $(VGA_BUFFER_PHYS_ADDR | 0x003), boot_page_table_1 - KERNEL_ADDR + 1023 * 4
+    movl $(VGA_BUFFER_PHYS_ADDR | 0x003), boot_page_table_1 - KERNEL_ADDR + (PDE_COUNT*1024-1) * 4
 
     // The page table is used at both page directory entry 0 (virtually from 0x0
     // to 0x3FFFFF) (thus identity mapping the kernel) and page directory entry
@@ -155,7 +156,22 @@ _start:
     // We need to map the physical address to page 768 along with write-protect and present bits
     // But also page 0 since that's where we are currently, and we need to jump to virtual address
     movl $(boot_page_table_1 - KERNEL_ADDR + 0x003), page_directory - KERNEL_ADDR + 0
-    movl $(boot_page_table_1 - KERNEL_ADDR + 0x003), page_directory - KERNEL_ADDR + 768 * 4
+
+    // for (eax = 0; eax < PDE_COUNT; eax++)
+    mov $0, %eax
+0:
+    cmp $PDE_COUNT, %eax
+    jge 0f
+
+    // (page_directory - KERNEL_ADDR + PDE_INDEX * 4)[eax * 4] = $(boot_page_table_1 - KERNEL_ADDR + 0x003 + eax * 4096)
+    mov %eax, %ebx
+    imul $4096, %ebx
+    add $(boot_page_table_1 - KERNEL_ADDR + 0x003), %ebx
+    mov %ebx, (page_directory - KERNEL_ADDR + KERNEL_PDE_INDEX*4)(,%eax,4)
+1:
+    inc %eax
+    jmp 0b
+0:
 
     // Set cr3 to the address of the page_directory
     mov $(page_directory - KERNEL_ADDR), %ecx
