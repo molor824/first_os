@@ -4,7 +4,7 @@
 #define FILE_CRT_PRIORITY 10000
 
 #define STDOUT 0
-#define MAX_FILE_HANDLES 0x10000
+#define MAX_FILE_PTRS 0x10000
 
 typedef int (*read_cb)(void *data, void *buf, unsigned size);
 typedef int (*write_cb)(void *data, const void *buf, unsigned size);
@@ -27,8 +27,7 @@ typedef struct file_ptr {
     file_handle_t *handle;
 } file_ptr_t;
 
-// TODO: Extend kernel to 2 page directory, and make file_map support atleast 1MiB worth of file handlers
-extern file_ptr_t file_ptrs[MAX_FILE_HANDLES];
+extern file_ptr_t file_ptrs[MAX_FILE_PTRS];
 
 int freg(file_ptr_t handle);
 // NOTE: file_unregister does not close the file, it only removes it from the file map

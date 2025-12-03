@@ -1,3 +1,5 @@
+.extern exception_handler
+
 .macro isr_err_stub index
 isr_stub_\index:
     call exception_handler

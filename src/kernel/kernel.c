@@ -17,10 +17,12 @@
 
 extern char _kernel_start;
 extern char _kernel_end;
+extern char KERNEL_ADDR;
 
 void kernel_main(void) {
-    printf("VGA Buffer is located at %p\n", &VGA_BUFFER_ADDR);
-    printf("Total kernel size in memory: %u bytes\n", &_kernel_end - &_kernel_start - 0xC0000000);
+    printf("Kernel: %p\n", &KERNEL_ADDR);
+    printf("VGA Buffer: %p\n", &VGA_BUFFER_ADDR);
+    printf("Total kernel size in memory: %u bytes\n", &_kernel_end - &_kernel_start - (long)&KERNEL_ADDR);
     printf("Hello, World!\n");
     printf("Welcome to My first OS!\n");
     fflush(STDOUT);

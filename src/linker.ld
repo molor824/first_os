@@ -1,5 +1,7 @@
 ENTRY(_start)
 
+EXTERN(KERNEL_ADDR)
+
 /* Explain for future self:
 .multiboot.* sections are in physical address!
 however the rest are in virtual address, hence `. += 0xC0000000`
@@ -27,9 +29,9 @@ SECTIONS
 		*(.multiboot.text)
 	}
 
-	. += 0xC0000000;
+	. += KERNEL_ADDR;
 	/* Virtual address */
-	.text ALIGN(4K) : AT(ADDR(.text) - 0xC0000000)
+	.text ALIGN(4K) : AT(ADDR(.text) - KERNEL_ADDR)
 	{
 		*(.text)
 	}

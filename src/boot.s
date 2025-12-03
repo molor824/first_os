@@ -3,9 +3,11 @@
 .set FLAGS, ALIGN | MEMINFO // Multiboot flag field
 .set MAGIC, 0x1BADB002 // Magic number, finds bootloader
 .set CHECKSUM, -(MAGIC + FLAGS) // Checksum
-.set KERNEL_PDE_INDEX, 768
-.set KERNEL_ADDR, KERNEL_PDE_INDEX*0x400000 // Kernel virtual base address
+
+// Paging
+.set PDE_INDEX, 0x300
 .set PDE_COUNT, 1
+.set KERNEL_ADDR, PDE_INDEX*0x400000 // Kernel virtual base address
 .set VGA_BUFFER_ADDR, KERNEL_ADDR+PDE_COUNT*0x400000-0x1000
 .set VGA_BUFFER_PHYS_ADDR, 0x000B8000
 .set VGA_WIDTH, 80
@@ -167,7 +169,7 @@ _start:
     mov %eax, %ebx
     imul $4096, %ebx
     add $(boot_page_table_1 - KERNEL_ADDR + 0x003), %ebx
-    mov %ebx, (page_directory - KERNEL_ADDR + KERNEL_PDE_INDEX*4)(,%eax,4)
+    mov %ebx, (page_directory - KERNEL_ADDR + PDE_INDEX*4)(,%eax,4)
 1:
     inc %eax
     jmp 0b
