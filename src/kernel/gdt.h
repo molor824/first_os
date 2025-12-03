@@ -3,6 +3,14 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "file.h"
+
+#define GDT_CRT_PRIORITY FILE_CRT_PRIORITY - 1
+#define KERNEL_CODE_SEGMENT 1
+#define KERNEL_DATA_SEGMENT 2
+#define USER_CODE_SEGMENT 3
+#define USER_DATA_SEGMENT 4
+#define TASK_STATE_SEGMENT 5
 
 typedef struct {
     uint32_t base;
@@ -11,9 +19,6 @@ typedef struct {
     uint8_t flags;
 } gdt_params_t;
 
-uint64_t gdt_entry(gdt_params_t params);
-void load_gdt(size_t size, void *base);
-
-extern uint64_t entries[6];
+extern uint64_t gdt_entries[6];
 
 #endif

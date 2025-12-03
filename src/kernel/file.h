@@ -10,6 +10,7 @@ typedef int (*read_cb)(void *data, void *buf, unsigned size);
 typedef int (*write_cb)(void *data, const void *buf, unsigned size);
 typedef int (*available_cb)(void *data);
 typedef int (*close_cb)(void *data);
+typedef int (*flush_cb)(void *data);
 
 // Handle struct containing methods for accessing file
 typedef struct file_handle {
@@ -17,6 +18,7 @@ typedef struct file_handle {
     write_cb write;
     available_cb available;
     close_cb close;
+    flush_cb flush;
 } file_handle_t;
 
 // File ptr that points to data and handle
@@ -28,12 +30,13 @@ typedef struct file_ptr {
 // TODO: Extend kernel to 2 page directory, and make file_map support atleast 1MiB worth of file handlers
 extern file_ptr_t file_ptrs[MAX_FILE_HANDLES];
 
-int file_register(file_ptr_t handle);
+int freg(file_ptr_t handle);
 // NOTE: file_unregister does not close the file, it only removes it from the file map
-int file_unregister(int fd);
-int file_read(int fd, void *buf, unsigned size);
-int file_write(int fd, const void *buf, unsigned size);
-int file_available(int fd);
-int file_close(int fd);
+int funreg(int fd);
+int fread(int fd, void *buf, unsigned size);
+int fwrite(int fd, const void *buf, unsigned size);
+int favl(int fd);
+int fclose(int fd);
+int fflush(int fd);
 
 #endif

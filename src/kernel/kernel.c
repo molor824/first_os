@@ -4,6 +4,7 @@
 #include "string.h"
 #include "stdio.h"
 #include "iobuf.h"
+#include "file.h"
 #include "vga.h"
 
 #if defined(__linux__)
@@ -22,5 +23,5 @@ void kernel_main(void) {
     printf("Total kernel size in memory: %u bytes\n", &_kernel_end - &_kernel_start - 0xC0000000);
     printf("Hello, World!\n");
     printf("Welcome to My first OS!\n");
-    buf_flush();
+    fflush(STDOUT);
 }

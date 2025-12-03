@@ -25,11 +25,11 @@ int fprintf(int fd, const char *format, ...) {
     return count;
 }
 
-#define _WRITE_CHECK(result, fd, buf, size) if ((result = file_write(fd, buf, size)) < size) \
+#define _WRITE_CHECK(result, fd, buf, size) if ((result = fwrite(fd, buf, size)) < size) \
                                                 return result < 0 ? result : count + result
 
 // Formats and writes to fd.
-// It prints until file_write returns zero or less
+// It prints until fwrite returns zero or less
 // More in detail format specifiers aren't implemented yet
 // TODO: Implement floating point, and other format specifiers
 int vfprintf(int fd, const char *format, va_list ap) {
@@ -154,8 +154,8 @@ int vsprintf(char *str, const char *format, va_list ap) {
     file_handle_t handle = {
         .write = vsprintf_write,
     };
-    int fd = file_register((file_ptr_t){.data = &data, .handle = &handle});
+    int fd = freg((file_ptr_t){.data = &data, .handle = &handle});
     int count = vfprintf(fd, format, ap);
-    file_unregister(fd); // No need for closing as we didn't define it
+    funreg(fd); // No need for closing as we didn't define it
     return count;
 }

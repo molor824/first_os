@@ -2,14 +2,14 @@
 #include "file.h"
 #include "stdio.h"
 
-uint64_t entries[6];
+uint64_t gdt_entries[6];
 
-__attribute__((constructor(FILE_CRT_PRIORITY - 1))) void setup_gdt(void) {
-    // Null segment
-    entries[0] = 0;
+uint64_t gdt_entry(gdt_params_t params);
+void load_gdt(void);
 
+__attribute__((constructor(GDT_CRT_PRIORITY))) void setup_gdt(void) {
     // Kernel mode code segment
-    entries[1] = gdt_entry((gdt_params_t){
+    gdt_entries[KERNEL_CODE_SEGMENT] = gdt_entry((gdt_params_t){
         .base = 0,
         .limit = 0xFFFFF,
         .access_byte = 0x9A, // Present, Ring 0, Code
@@ -17,7 +17,7 @@ __attribute__((constructor(FILE_CRT_PRIORITY - 1))) void setup_gdt(void) {
     });
 
     // Kernel mode data segment
-    entries[2] = gdt_entry((gdt_params_t){
+    gdt_entries[KERNEL_DATA_SEGMENT] = gdt_entry((gdt_params_t){
         .base = 0,
         .limit = 0xFFFFF,
         .access_byte = 0x92, // Present, Ring 0, Data
@@ -25,7 +25,7 @@ __attribute__((constructor(FILE_CRT_PRIORITY - 1))) void setup_gdt(void) {
     });
 
     // User mode code segment
-    entries[3] = gdt_entry((gdt_params_t){
+    gdt_entries[USER_CODE_SEGMENT] = gdt_entry((gdt_params_t){
         .base = 0,
         .limit = 0xFFFFF,
         .access_byte = 0xFA, // Present, Ring 3, Code
@@ -33,7 +33,7 @@ __attribute__((constructor(FILE_CRT_PRIORITY - 1))) void setup_gdt(void) {
     });
 
     // User mode data segment
-    entries[4] = gdt_entry((gdt_params_t){
+    gdt_entries[USER_DATA_SEGMENT] = gdt_entry((gdt_params_t){
         .base = 0,
         .limit = 0xFFFFF,
         .access_byte = 0xF2, // Present, Ring 3, Data
@@ -41,16 +41,17 @@ __attribute__((constructor(FILE_CRT_PRIORITY - 1))) void setup_gdt(void) {
     });
 
     // Task state segment PLACEHOLDER
-    entries[5] = gdt_entry((gdt_params_t){
+    gdt_entries[TASK_STATE_SEGMENT] = gdt_entry((gdt_params_t){
         .base = 0,
         .limit = 0,
         .access_byte = 0x89, // Present, Ring 0, TSS
         .flags = 0x0         // byte granularity
     });
 
-    load_gdt(sizeof(entries), entries);
+    load_gdt();
 
     printf("GDT setup complete.\n");
+    fflush(STDOUT);
 }
 
 uint64_t gdt_entry(gdt_params_t params) {
@@ -62,11 +63,12 @@ uint64_t gdt_entry(gdt_params_t params) {
         (uint64_t)(params.base >> 24 & 0xFF) << 56;  // base[31:24]
 }
 
-void load_gdt(size_t size, void *base) {
+void load_gdt(void) {
+    uint32_t base = (uint32_t)gdt_entries;
     uint16_t gdt_ptr[3];
-    gdt_ptr[0] = (uint16_t)size - 1;        // Limit
-    gdt_ptr[1] = (uint16_t)((uint32_t)base & 0xFFFF);         // Base low
-    gdt_ptr[2] = (uint16_t)(((uint32_t)base >> 16) & 0xFFFF); // Base high
+    gdt_ptr[0] = sizeof(gdt_entries) - 1;        // Limit
+    gdt_ptr[1] = base;         // Base low
+    gdt_ptr[2] = base >> 16; // Base high
 
     __asm__ volatile (
         "cli\n"
