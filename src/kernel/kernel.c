@@ -25,5 +25,8 @@ void kernel_main(void) {
     printf("Total kernel size in memory: %u bytes\n", &_kernel_end - &_kernel_start - (long)&KERNEL_ADDR);
     printf("Hello, World!\n");
     printf("Welcome to My first OS!\n");
-    fflush(STDOUT);
+
+    while (1) {
+        __asm__ volatile("hlt");
+    }
 }

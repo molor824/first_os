@@ -156,6 +156,6 @@ int vsprintf(char *str, const char *format, va_list ap) {
     };
     int fd = freg((file_ptr_t){.data = &data, .handle = &handle});
     int count = vfprintf(fd, format, ap);
-    funreg(fd); // No need for closing as we didn't define it
+    fclose(fd);
     return count;
 }

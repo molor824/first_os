@@ -8,29 +8,29 @@ size_t buf_size;
 size_t buf_cursor;
 uint8_t buf_color = VGA_COLOR_ENTRY(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 
-size_t buf_index(size_t i) {
+static size_t buf_index(size_t i) {
     return (buf_position + i) % IO_BUF_SIZE;
 }
-uint16_t *buf_get(size_t i) {
+static uint16_t *buf_get(size_t i) {
     return &buffer[buf_index(i)];
 }
-char *buf_get_char(size_t i) {
+static char *buf_get_char(size_t i) {
     return (char*)&buffer[buf_index(i)];
 }
-void buf_push(uint16_t x) {
+static void buf_push(uint16_t x) {
     *buf_get(buf_size) = x;
     if (buf_size < IO_BUF_SIZE) buf_size++;
     else buf_position++;
 }
-void buf_insert(size_t i, uint16_t x) {
-    for (size_t j = buf_size; j > i; j--) {
-        *buf_get(j) = *buf_get(j - 1);
-    }
-    *buf_get(i) = x;
-    if (buf_size < IO_BUF_SIZE) buf_size++;
-    else buf_position++;
-}
-void buf_remove(size_t i) {
+// static void buf_insert(size_t i, uint16_t x) {
+//     for (size_t j = buf_size; j > i; j--) {
+//         *buf_get(j) = *buf_get(j - 1);
+//     }
+//     *buf_get(i) = x;
+//     if (buf_size < IO_BUF_SIZE) buf_size++;
+//     else buf_position++;
+// }
+static void buf_remove(size_t i) {
     if (buf_size == 0) return;
     for (size_t j = i; j < buf_size - 1; j++) {
         *buf_get(j) = *buf_get(j + 1);

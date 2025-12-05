@@ -4,10 +4,10 @@
 
 uint64_t gdt_entries[6];
 
-uint64_t gdt_entry(gdt_params_t params);
-void load_gdt(void);
+static uint64_t gdt_entry(gdt_params_t params);
+static void load_gdt(void);
 
-__attribute__((constructor(GDT_CRT_PRIORITY))) void setup_gdt(void) {
+__attribute__((constructor(GDT_CRT_PRIORITY))) static void setup_gdt(void) {
     // Kernel mode code segment
     gdt_entries[KERNEL_CODE_SEGMENT] = gdt_entry((gdt_params_t){
         .base = 0,
@@ -51,10 +51,9 @@ __attribute__((constructor(GDT_CRT_PRIORITY))) void setup_gdt(void) {
     load_gdt();
 
     printf("GDT setup complete.\n");
-    fflush(STDOUT);
 }
 
-uint64_t gdt_entry(gdt_params_t params) {
+static uint64_t gdt_entry(gdt_params_t params) {
     return (uint64_t)(params.limit & 0xFFFF) |       // limits[15:0]
         (uint64_t)(params.base & 0xFFFFFF) << 16 |   // base[23:0]
         (uint64_t)params.access_byte << 40 |         // access byte
@@ -63,7 +62,7 @@ uint64_t gdt_entry(gdt_params_t params) {
         (uint64_t)(params.base >> 24 & 0xFF) << 56;  // base[31:24]
 }
 
-void load_gdt(void) {
+static void load_gdt(void) {
     uint32_t base = (uint32_t)gdt_entries;
     uint16_t gdt_ptr[3];
     gdt_ptr[0] = sizeof(gdt_entries) - 1;        // Limit

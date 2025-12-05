@@ -30,8 +30,6 @@ typedef struct file_ptr {
 extern file_ptr_t file_ptrs[MAX_FILE_PTRS];
 
 int freg(file_ptr_t handle);
-// NOTE: file_unregister does not close the file, it only removes it from the file map
-int funreg(int fd);
 int fread(int fd, void *buf, unsigned size);
 int fwrite(int fd, const void *buf, unsigned size);
 int favl(int fd);

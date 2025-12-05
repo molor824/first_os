@@ -1,34 +1,49 @@
 #include "idt.h"
 #include "gdt.h"
 #include "stdio.h"
+#include "pic.h"
 #include <stdbool.h>
+
+extern void *isr_stub_table;
+extern void *isr_stub_table_end;
 
 idt_entry_t idt_entries[256];
 idtr_t idtr;
-bool int_vectors[256];
-extern void *isr_stub_table[32];
 
-void exception_handler(void) {
-    printf("EXCEPTION");
+static bool idt_vectors[256];
+
+void exception_handler(int index) {
+    printf("EXCEPTION: %d\n", index);
     fflush(STDOUT);
-    for (;;)
-        __asm__ volatile("cli\nhlt");
+    for (;;) {
+        __asm__ volatile("cli");
+        __asm__ volatile("hlt");
+    }
+}
+void irq_handler(int index) {
+    size_t irq = index - MASTER_VECTOR_OFFSET;
+    IRQ_callbacks[irq]();
+    PIC_sendEOI(irq);
 }
 
-void idt_lidt(void);
-void idt_set_descriptor(uint8_t, void *, uint8_t);
-__attribute__((constructor(IDT_CRT_PRIORITY))) void gdt_crt(void) {
-    for (int vector = 0; vector < sizeof(isr_stub_table) / sizeof(void*); vector++) {
+static void idt_lidt(void);
+static void idt_set_descriptor(uint8_t, void *, uint8_t);
+
+__attribute__((constructor(IDT_CRT_PRIORITY))) static void gdt_crt(void) {
+    for (size_t vector = 0; &(&isr_stub_table)[vector] < &isr_stub_table_end; vector++) {
+        if (vector >= MASTER_VECTOR_OFFSET && vector < MASTER_VECTOR_OFFSET + 16 && IRQ_callbacks[vector - MASTER_VECTOR_OFFSET] == NULL) {
+            continue;
+        }
         // 0x8E is 32-bit interrupt gate (see https://wiki.osdev.org/Interrupt_Descriptor_Table#Structure_on_x86-64)
-        idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
-        int_vectors[vector] = true;
+        idt_set_descriptor(vector, (&isr_stub_table)[vector], 0x8E);
+        idt_vectors[vector] = true;
+        printf("IDT vector set: %x\n", vector);
     }
     idt_lidt();
     printf("IDT setup complete.\n");
-    fflush(STDOUT);
 }
 
-void idt_set_descriptor(uint8_t vector, void *isr, uint8_t flags) {
+static void idt_set_descriptor(uint8_t vector, void *isr, uint8_t flags) {
     idt_entries[vector] = (idt_entry_t){
         .isr_low = (uint32_t)isr,
         .isr_high = (uint32_t)isr >> 16,
@@ -38,9 +53,10 @@ void idt_set_descriptor(uint8_t vector, void *isr, uint8_t flags) {
     };
 }
 
-void idt_lidt(void) {
+static void idt_lidt(void) {
     idtr.base = (uint32_t)idt_entries;
     idtr.limit = (uint16_t)(sizeof(idt_entries) - 1);
 
-    __asm__ volatile("lidt %0\nsti" : : "m"(idtr));
+    __asm__ volatile("lidt %0" : : "m"(idtr));
+    __asm__ volatile("sti");
 }
