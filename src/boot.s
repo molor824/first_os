@@ -1,8 +1,5 @@
-.set ALIGN, 1<<0
-.set MEMINFO, 1<<1
-.set FLAGS, ALIGN | MEMINFO // Multiboot flag field
-.set MAGIC, 0x1BADB002 // Magic number, finds bootloader
-.set CHECKSUM, -(MAGIC + FLAGS) // Checksum
+.set MAGIC, 0xE85250D6 // Magic number, finds bootloader
+.set ARCH, 0
 
 // Paging
 .set PDE_INDEX, 0x300
@@ -17,13 +14,28 @@
 .global VGA_BUFFER_ADDR
 .global KERNEL_ADDR
 
-// Declare multiboot header that marks the program as kernel
-.section .multiboot.data, "aw"
-.align 4
-.long MAGIC
-.long FLAGS
-.long CHECKSUM
+.section multiboot2
+.align 8
+multiboot2_header:
+    .long MAGIC
+    .long ARCH
+    .long multiboot2_end - multiboot2_header
+    .long -(MAGIC + ARCH + multiboot2_end - multiboot2_header)
 
+.align 8
+framebuffer_request:
+    .long 5
+    .long 20
+    .long 1024
+    .long 768
+    .long 32
+
+.align 8
+    .long 0
+    .long 0x8
+multiboot2_end:
+
+.section .multiboot.data, "aw"
 error_kernel_mmap_fail:
 .string "ERROR: KERNEL MMAP FAIL\n(PTE INSUFFICIENT)"
 
