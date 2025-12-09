@@ -1,5 +1,9 @@
 .set MAGIC, 0xE85250D6 // Magic number, finds bootloader
 .set ARCH, 0
+.set WIDTH, 800
+.set HEIGHT, 600
+
+.set FRAMEBUFFER_INFO, 8
 
 // Paging
 .set PDE_INDEX, 0x300
@@ -26,14 +30,16 @@ multiboot2_header:
 framebuffer_request:
     .long 5
     .long 20
-    .long 1024
-    .long 768
+    .long WIDTH
+    .long HEIGHT
     .long 32
 
 .align 8
     .long 0
     .long 0x8
 multiboot2_end:
+
+.align 8
 
 .section .multiboot.data, "aw"
 error_kernel_mmap_fail:
@@ -48,6 +54,20 @@ stack_top:
 
 .section .bss, "aw", @nobits
 // Preallocate pages used for paging.
+.align 4
+framebuffer_addr:
+.skip 4
+framebuffer_pitch:
+.skip 4
+framebuffer_width:
+.skip 4
+framebuffer_height:
+.skip 4
+framebuffer_bpp:
+.skip 1
+framebuffer_type:
+.skip 1
+
 .align 4096
 page_directory:
 .skip 4096
@@ -115,9 +135,52 @@ abort:
 .global _start
 .type _start, @function
 _start:
-.set KERNEL_PAGE_COUNT, PDE_COUNT*1024-1
     // Setup stack (physical addressed stack)
+    // No need to pop stack off since stack is reset after paging
     mov $(stack_top - KERNEL_ADDR), %esp
+
+    // Go through multiboot2 tags till framebuffer_info is received
+    mov %ebx, %edi
+    mov (%edi), %eax // Total size
+    add %edi, %eax   // End pointer
+    add $8, %ebx // Start iterating 
+
+0:
+    cmp %eax, %ebx // while (ebx < eax)
+    jge 0f
+
+    // read type and check
+    mov (%ebx), %ecx
+    // if type is 0, it's a terminating tag
+    cmp $0, %ecx
+    je 0f
+    // if (ecx == FRAMEBUFFER_INFO)
+    cmp $FRAMEBUFFER_INFO, %ecx
+    jne 1f
+    // TODO: Figure out what to do with framebuffer info
+    // Store to certain struct
+    mov 8(%ebx), %ecx
+    mov %ebx, (framebuffer_addr - KERNEL_ADDR)
+    mov 16(%ebx), %ecx
+    mov %ebx, (framebuffer_pitch - KERNEL_ADDR)
+    mov 20(%ebx), %ecx
+    mov %ebx, (framebuffer_width - KERNEL_ADDR)
+    mov 24(%ebx), %ecx
+    mov %ebx, (framebuffer_height - KERNEL_ADDR)
+    mov 28(%ebx), %cx
+    mov %cx, (framebuffer_bpp - KERNEL_ADDR)
+    1:
+
+    // Read size and add
+    mov 4(%ebx), %ecx
+    add %ecx, %ebx
+    // Align with 8-byte padding via this formula ebx = (ebx + 7) & ~7
+    add $7, %ebx
+    and $-8, %ebx // ~7 = -8
+    jmp 0b
+0:
+
+.set KERNEL_PAGE_COUNT, PDE_COUNT*1024-1
     // Physical address of boot_page_table_1
     mov $(boot_page_table_1 - KERNEL_ADDR), %edi
     // First address to map is address 0
