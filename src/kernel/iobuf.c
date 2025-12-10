@@ -1,5 +1,4 @@
 #include <stdbool.h>
-#include "vga.h"
 #include "iobuf.h"
 
 uint16_t buffer[IO_BUF_SIZE];

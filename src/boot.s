@@ -9,13 +9,7 @@
 .set PDE_INDEX, 0x300
 .set PDE_COUNT, 1
 .set KERNEL_ADDR, PDE_INDEX*0x400000 // Kernel virtual base address
-.set VGA_BUFFER_ADDR, KERNEL_ADDR+PDE_COUNT*0x400000-0x1000
-.set VGA_BUFFER_PHYS_ADDR, 0x000B8000
-.set VGA_WIDTH, 80
-.set VGA_HEIGHT, 25
-.set ERROR_COLOR, 4<<4
 
-.global VGA_BUFFER_ADDR
 .global KERNEL_ADDR
 
 .section multiboot2
@@ -32,7 +26,7 @@ framebuffer_request:
     .long 20
     .long WIDTH
     .long HEIGHT
-    .long 32
+    .long 24 // BPP, guaranteed to return direct RGB indexing
 
 .align 8
     .long 0
@@ -42,8 +36,6 @@ multiboot2_end:
 .align 8
 
 .section .multiboot.data, "aw"
-error_kernel_mmap_fail:
-.string "ERROR: KERNEL MMAP FAIL\n(PTE INSUFFICIENT)"
 
 // Define stack
 .section .bootstrap_stack, "aw", @nobits
@@ -55,6 +47,7 @@ stack_top:
 .section .bss, "aw", @nobits
 // Preallocate pages used for paging.
 .align 4
+framebuffer_info:
 framebuffer_addr:
 .skip 4
 framebuffer_pitch:
@@ -66,6 +59,20 @@ framebuffer_height:
 framebuffer_bpp:
 .skip 1
 framebuffer_type:
+.skip 1
+framebuffer_reserved:
+.skip 1
+framebuffer_red_field_pos:
+.skip 1
+framebuffer_red_mask_size:
+.skip 1
+framebuffer_green_field_pos:
+.skip 1
+framebuffer_green_mask_size:
+.skip 1
+framebuffer_blue_field_pos:
+.skip 1
+framebuffer_blue_mask_size:
 .skip 1
 
 .align 4096
@@ -84,45 +91,6 @@ boot_page_table_1:
 
 // starting point
 .section .multiboot.text, "a"
-
-// (string str: %eax)
-panic:
-    mov $0, %edi // vga row
-    mov $0, %esi // vga col
-
-    // while (*str != 0)
-0:
-    cmpb $0, (%eax)
-    je abort
-
-    // if (*str == '\n') skip to newline
-    cmpb $0xA, (%eax)
-    je 1f
-
-    // VGA_BUFFER[row*WIDTH+col]=(*str)|(color<<8)
-    mov %edi, %ebx
-    imul $VGA_WIDTH, %ebx
-    add %esi, %ebx
-
-    xor %cx, %cx
-    movb (%eax), %cl
-    or $(ERROR_COLOR<<8), %cx
-    mov %cx, VGA_BUFFER_PHYS_ADDR(,%ebx,2)
-
-    // col++
-    inc %esi
-    // if (col >= VGA_WIDTH) col = 0; row++;
-    cmp $VGA_WIDTH, %esi
-    jl 2f
-
-1:
-    mov $0, %esi
-    inc %edi
-
-2:
-    // str++;
-    inc %eax
-    jmp 0b
 
 .global abort
 .type abort, @function
@@ -157,18 +125,24 @@ _start:
     // if (ecx == FRAMEBUFFER_INFO)
     cmp $FRAMEBUFFER_INFO, %ecx
     jne 1f
-    // TODO: Figure out what to do with framebuffer info
-    // Store to certain struct
+    // Framebuffer_type must be 1, otherwise abort
+    // if (cl != 1) abort
+    mov 29(%ebx), %cl
+    // Store framebuffer to a struct
     mov 8(%ebx), %ecx
-    mov %ebx, (framebuffer_addr - KERNEL_ADDR)
+    mov %ecx, (framebuffer_addr - KERNEL_ADDR)
     mov 16(%ebx), %ecx
-    mov %ebx, (framebuffer_pitch - KERNEL_ADDR)
+    mov %ecx, (framebuffer_pitch - KERNEL_ADDR)
     mov 20(%ebx), %ecx
-    mov %ebx, (framebuffer_width - KERNEL_ADDR)
+    mov %ecx, (framebuffer_width - KERNEL_ADDR)
     mov 24(%ebx), %ecx
-    mov %ebx, (framebuffer_height - KERNEL_ADDR)
-    mov 28(%ebx), %cx
-    mov %cx, (framebuffer_bpp - KERNEL_ADDR)
+    mov %ecx, (framebuffer_height - KERNEL_ADDR)
+    mov 28(%ebx), %ecx
+    mov %ecx, (framebuffer_bpp - KERNEL_ADDR)
+    mov 30(%ebx), %ecx
+    mov %ecx, (framebuffer_red_mask_size - KERNEL_ADDR)
+    mov 34(%ebx), %cl
+    mov %cl, (framebuffer_blue_mask_size - KERNEL_ADDR)
     1:
 
     // Read size and add
@@ -180,7 +154,7 @@ _start:
     jmp 0b
 0:
 
-.set KERNEL_PAGE_COUNT, PDE_COUNT*1024-1
+.set KERNEL_PAGE_COUNT, PDE_COUNT*1024
     // Physical address of boot_page_table_1
     mov $(boot_page_table_1 - KERNEL_ADDR), %edi
     // First address to map is address 0
@@ -219,7 +193,7 @@ _start:
     call panic
 0:
     // Map VGA memory buffer to 0xC03FF000 as "present" and "writable"
-    movl $(VGA_BUFFER_PHYS_ADDR | 0x003), boot_page_table_1 - KERNEL_ADDR + (PDE_COUNT*1024-1) * 4
+    // movl $(VGA_BUFFER_PHYS_ADDR | 0x003), boot_page_table_1 - KERNEL_ADDR + (PDE_COUNT*1024-1) * 4
 
     // The page table is used at both page directory entry 0 (virtually from 0x0
     // to 0x3FFFFF) (thus identity mapping the kernel) and page directory entry

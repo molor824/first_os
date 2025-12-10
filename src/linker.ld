@@ -27,7 +27,6 @@ SECTIONS
 	.multiboot.data : {
 		*(.multiboot.data)
 	}
-
 	.multiboot.text : {
 		*(.multiboot.text)
 	}
