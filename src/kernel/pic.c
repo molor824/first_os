@@ -45,7 +45,7 @@
     outb(port, value); \
     io_wait()
 
-__attribute__((constructor(PIC_CRT_PRIORITY))) static void pic_ctr(void) {
+void PIC_init(void) {
     PIC_remap(MASTER_VECTOR_OFFSET, SLAVE_VECTOR_OFFSET);
     PIC_disable();
     for (int i = 0; i < 16; i++) {
@@ -81,10 +81,10 @@ static uint16_t __pic_get_irq_reg(int ocw3) {
     outb(SLAVE_PIC_CMD, ocw3);
     return (inb(SLAVE_PIC_CMD) << 8) | inb(MASTER_PIC_CMD);
 }
-uint16_t pic_get_irr(void) {
+uint16_t PIC_get_irr(void) {
     return __pic_get_irq_reg(PIC_READ_IRR);
 }
-uint16_t pic_get_isr(void) {
+uint16_t PIC_get_isr(void) {
     return __pic_get_irq_reg(PIC_READ_ISR);
 }
 

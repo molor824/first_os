@@ -5,7 +5,6 @@
 #include <stddef.h>
 #include "file.h"
 
-#define GDT_CRT_PRIORITY FILE_CRT_PRIORITY - 1
 #define KERNEL_CODE_SEGMENT 1
 #define KERNEL_DATA_SEGMENT 2
 #define USER_CODE_SEGMENT 3
@@ -20,5 +19,7 @@ typedef struct {
 } gdt_params_t;
 
 extern uint64_t gdt_entries[6];
+
+void gdt_init(void);
 
 #endif

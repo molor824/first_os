@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include "gdt.h"
 
-#define IDT_CRT_PRIORITY GDT_CRT_PRIORITY - 1
-
 typedef struct {
     uint16_t isr_low;
     uint16_t kernel_cs;
@@ -25,5 +23,6 @@ extern idtr_t idtr;
 
 void exception_handler(int index);
 void irq_handler(int index);
+void idt_init(void);
 
 #endif

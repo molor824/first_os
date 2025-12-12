@@ -19,22 +19,26 @@ KERNEL_OBJECTS:=$(patsubst $(KERNEL_SRC_DIR)/%.s, $(KERNEL_BUILD_DIR)/%.o, $(pat
 
 # Boot sources/objects
 
-BOOT_SOURCES:=$(wildcard $(SRC_DIR)/*.s $(SRC_DIR)/*.c)
-BOOT_OBJECTS:=$(patsubst $(SRC_DIR)/%.s, $(BUILD_DIR)/%.o, $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(BOOT_SOURCES)))
+BOOT_SRC:=$(SRC_DIR)/boot.s
+BOOT_OBJ:=$(BUILD_DIR)/boot.o
 
 LINKER_SRC:=$(SRC_DIR)/linker.ld
 OS_BIN:=$(BUILD_DIR)/first_os.bin
 
+OS_ISO:=$(BUILD_DIR)/first_os.iso
+GRUB_CFG:=$(SRC_DIR)/grub.cfg
+ISO_DIR:=$(BUILD_DIR)/isodir
+ISO_OS_BIN:=$(ISO_DIR)/boot/first_os.bin
+ISO_GRUB_CFG:=$(ISO_DIR)/boot/grub/grub.cfg
+
 .PHONY: all build qemu clean bootable
 
-all: build $(OS_BIN)
-
-LINK_OBJS:=$(BOOT_OBJECTS) $(KERNEL_OBJECTS)
+all: build $(OS_BIN) $(OS_ISO)
 
 # NOTE TO SELF: Put -lgcc after all the input objects to avoid "undefined reference to `__aeabi_idiv`" errors
 # Generally it seems to be a good idea to put inputs before libraries
-$(OS_BIN): $(LINK_OBJS) $(LINKER_SRC) Makefile
-	$(GCC) $(LINK_OBJS) -T $(LINKER_SRC) $(CFLAGS) -o $(OS_BIN)
+$(OS_BIN): $(BOOT_OBJ) $(KERNEL_OBJECTS) $(LINKER_SRC) Makefile
+	$(GCC) $(BOOT_OBJ) $(KERNEL_OBJECTS) -T $(LINKER_SRC) $(CFLAGS) -o $(OS_BIN)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s Makefile
 	$(GCC) $< $(CFLAGS) -c -o $@
@@ -53,21 +57,13 @@ build:
 	mkdir -p $(KERNEL_BUILD_DIR)
 
 qemu:
-	$(QEMU) -kernel $(OS_BIN)
+	$(QEMU) -cdrom $(OS_ISO)
 
 qemu-debug:
-	$(QEMU) -s -S -kernel $(OS_BIN)
+	$(QEMU) -s -S -cdrom $(OS_ISO)
 
 clean:
 	rm -rf $(BUILD_DIR)/*
-
-OS_ISO:=$(BUILD_DIR)/first_os.iso
-GRUB_CFG:=$(SRC_DIR)/grub.cfg
-ISO_DIR:=$(BUILD_DIR)/isodir
-ISO_OS_BIN:=$(ISO_DIR)/boot/first_os.bin
-ISO_GRUB_CFG:=$(ISO_DIR)/boot/grub/grub.cfg
-
-bootable: $(OS_ISO)
 
 $(OS_ISO): $(GRUB_CFG) $(OS_BIN)
 	mkdir -p $(ISO_DIR)/boot/grub

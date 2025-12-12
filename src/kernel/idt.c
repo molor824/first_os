@@ -29,7 +29,7 @@ void irq_handler(int index) {
 static void idt_lidt(void);
 static void idt_set_descriptor(uint8_t, void *, uint8_t);
 
-__attribute__((constructor(IDT_CRT_PRIORITY))) static void gdt_crt(void) {
+void idt_init(void) {
     for (size_t vector = 0; &(&isr_stub_table)[vector] < &isr_stub_table_end; vector++) {
         if (vector >= MASTER_VECTOR_OFFSET && vector < MASTER_VECTOR_OFFSET + 16 && IRQ_callbacks[vector - MASTER_VECTOR_OFFSET] == NULL) {
             continue;

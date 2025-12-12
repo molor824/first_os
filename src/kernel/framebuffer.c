@@ -1,41 +1,49 @@
 #include "framebuffer.h"
 #include "default_font.h"
+#include "string.h"
 
+framebuffer_info_t *framebuffer_info;
+
+void fb_pixel_map_color(uint8_t *pixel, color_t color) {
+    uint32_t bytes_per_pixel = framebuffer_info->bpp / 8;
+    memset(pixel, 0, bytes_per_pixel);
+
+    color.r = color.r >> (8 - framebuffer_info->red_mask_size);
+    color.g = color.g >> (8 - framebuffer_info->red_mask_size);
+    color.b = color.b >> (8 - framebuffer_info->red_mask_size);
+
+    pixel[framebuffer_info->red_field_position / 8] |= color.r << (framebuffer_info->red_field_position % 8);
+    pixel[framebuffer_info->red_field_position / 8 + 1] |= color.r >> (8 - framebuffer_info->red_field_position % 8);
+
+    pixel[framebuffer_info->green_field_position / 8] |= color.g << (framebuffer_info->green_field_position % 8);
+    pixel[framebuffer_info->green_field_position / 8 + 1] |= color.g >> (8 - framebuffer_info->green_field_position % 8);
+
+    pixel[framebuffer_info->blue_field_position / 8] |= color.b << (framebuffer_info->blue_field_position % 8);
+    pixel[framebuffer_info->blue_field_position / 8 + 1] |= color.b >> (8 - framebuffer_info->blue_field_position % 8);
+}
+void fb_clear() {
+    memset(framebuffer_info->address, 0, framebuffer_info->pitch * framebuffer_info->height);
+}
 int fb_write_pixel(point_t point, color_t color) {
-    if (point.x >= framebuffer_info.width) return -1;
-    if (point.y >= framebuffer_info.height) return -1;
-    uint32_t bytes_per_pixel = framebuffer_info.bpp / 8;
-    uint32_t index = point.x * bytes_per_pixel + point.y * framebuffer_info.pitch;
-    // Zero the pixels
-    for (int i = 0; i < bytes_per_pixel; i++) {
-        framebuffer_info.address[index + i] = 0;
-    }
-    color.r = color.r >> (8 - framebuffer_info.red_mask_size);
-    color.g = color.g >> (8 - framebuffer_info.red_mask_size);
-    color.b = color.b >> (8 - framebuffer_info.red_mask_size);
-    framebuffer_info.address[index + framebuffer_info.red_field_pos / 8] |= color.r << (framebuffer_info.red_field_pos % 8);
-    framebuffer_info.address[index + framebuffer_info.red_field_pos / 8 + 1] |= color.r >> (8 - framebuffer_info.red_field_pos % 8);
+    if (point.x >= framebuffer_info->width) return -1;
+    if (point.y >= framebuffer_info->height) return -1;
+    uint32_t bytes_per_pixel = framebuffer_info->bpp / 8;
+    uint32_t index = point.x * bytes_per_pixel + point.y * framebuffer_info->pitch;
 
-    framebuffer_info.address[index + framebuffer_info.green_field_pos / 8] |= color.g << (framebuffer_info.green_field_pos % 8);
-    framebuffer_info.address[index + framebuffer_info.green_field_pos / 8 + 1] |= color.g >> (8 - framebuffer_info.green_field_pos % 8);
-
-    framebuffer_info.address[index + framebuffer_info.blue_field_pos / 8] |= color.b << (framebuffer_info.blue_field_pos % 8);
-    framebuffer_info.address[index + framebuffer_info.blue_field_pos / 8 + 1] |= color.b >> (8 - framebuffer_info.blue_field_pos % 8);
+    fb_pixel_map_color(&framebuffer_info->address[index], color);
     return 0;
 }
-int fb_write_char(point_t *origin, char ch, color_t fg, color_t bg) {
-    if (!origin) return -1;
-
-    glyph_t glyph = glyphs[ch];
-    int draw_x = origin->x + glyph.bitmap_left;
-    int draw_y = origin->y - glyph.bitmap_top;
+void fb_write_char(point_t origin, char ch, color_t fg, color_t bg) {
+    glyph_t glyph = glyphs[(int)ch];
+    int draw_x = origin.x + glyph.bitmap_left;
+    int draw_y = origin.y - glyph.bitmap_top;
 
     for (int y = 0; y < glyph.rows; y++) {
         int py = draw_y + y;
-        if (py < 0 || py >= framebuffer_info.height) continue;
+        if (py < 0 || py >= framebuffer_info->height) continue;
         for (int x = 0; x < glyph.width; x++) {
             int px = draw_x + x;
-            if (px < 0 || px >= framebuffer_info.width) continue;
+            if (px < 0 || px >= framebuffer_info->width) continue;
             int buffer_index = x;
             if (glyph.pitch >= 0) buffer_index += glyph.pitch * y;
             else buffer_index += -glyph.pitch * (glyph.rows - y - 1);
@@ -50,8 +58,4 @@ int fb_write_char(point_t *origin, char ch, color_t fg, color_t bg) {
             fb_write_pixel((point_t){px, py}, color);
         }
     }
-
-    origin->x += font_advance;
-
-    return 0;
 }

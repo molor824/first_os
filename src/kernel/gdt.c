@@ -7,7 +7,7 @@ uint64_t gdt_entries[6];
 static uint64_t gdt_entry(gdt_params_t params);
 static void load_gdt(void);
 
-__attribute__((constructor(GDT_CRT_PRIORITY))) static void setup_gdt(void) {
+void gdt_init(void) {
     // Kernel mode code segment
     gdt_entries[KERNEL_CODE_SEGMENT] = gdt_entry((gdt_params_t){
         .base = 0,

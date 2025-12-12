@@ -1,8 +1,6 @@
 #ifndef __FILE_H
 #define __FILE_H
 
-#define FILE_CRT_PRIORITY 10000
-
 #define STDOUT 0
 #define MAX_FILE_PTRS 0x10000
 
@@ -35,5 +33,7 @@ int fwrite(int fd, const void *buf, unsigned size);
 int favl(int fd);
 int fclose(int fd);
 int fflush(int fd);
+
+void file_init(void);
 
 #endif

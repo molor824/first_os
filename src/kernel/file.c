@@ -15,7 +15,7 @@ static int stdout_flush(void *data) {
 file_handle_t stdout_handle;
 file_ptr_t file_ptrs[MAX_FILE_PTRS];
 
-__attribute__((constructor(FILE_CRT_PRIORITY))) static void file_crt(void) {
+void file_init(void) {
     stdout_handle = (file_handle_t){
         .write = stdout_write,
         .flush = stdout_flush,
