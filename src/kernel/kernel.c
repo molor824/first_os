@@ -8,6 +8,7 @@
 #include "gdt.h"
 #include "idt.h"
 #include "pic.h"
+#include "kernel.h"
 
 #if defined(__linux__)
 #error "The compiler is not cross-compiler"
@@ -28,32 +29,10 @@ extern char KERNEL_ADDR;
 extern void _init(void);
 extern void _fini(void);
 
-#define PAGE_SIZE 4096
-#define PDE_RANGE (1024 * 4096)
-
-typedef struct {
-    uint32_t type;
-    uint32_t size;
-    uint8_t data[];
-} boot_tag_t;
-typedef struct {
-    uint32_t total_size;
-    uint32_t reserved;
-    boot_tag_t tags[];
-} __attribute__((packed)) boot_info_t;
-
-uint32_t page_directory_entries[1024] __attribute__((aligned(4096)));
-uint32_t page_tables_entries[1024 * 1024] __attribute__((aligned(4096)));
+uint32_t page_directory_entries[1024];
+uint32_t page_tables_entries[1024 * 1024];
 size_t kernel_end_addr = (size_t)&KERNEL_ADDR;
 boot_info_t *boot_info;
-
-#define REFRESH_CR3() __asm__ volatile( \
-    "mov %%cr3, %%eax\n" \
-    "mov %%eax, %%cr3" \
-    : : : "eax" \
-)
-
-#define FRAMEBUFFER_INFO 8
 
 void *mmap(void *mem, size_t size) {
     size_t start_addr = (size_t)mem & -4096;
@@ -102,6 +81,7 @@ void main(void) {
     REFRESH_CR3();
 
     bootinfo_init();
+    fb_init();
     file_init();
     gdt_init();
     idt_init();
