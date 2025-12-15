@@ -1,7 +1,7 @@
 .set MAGIC, 0xE85250D6 // Magic number, finds bootloader
 .set ARCH, 0
-.set WIDTH, 800
-.set HEIGHT, 600
+.set WIDTH, 640
+.set HEIGHT, 480
 
 .set FRAMEBUFFER_INFO, 8
 

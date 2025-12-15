@@ -55,7 +55,6 @@ void PIC_init(void) {
 }
 
 static void IRQ_timer(void) {
-    fflush(STDOUT);
 }
 
 #define KBD_DATA 0x60

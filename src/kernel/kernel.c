@@ -94,7 +94,14 @@ void main(void) {
     printf("Hello, World!\n");
     printf("Welcome to My first OS!\n");
 
+    printf("Full ASCII test\n");
+    for (int i = ' '; i < 128; i++) {
+        printf("%c", i);
+        if (i % 8 == 7) printf("\n");
+    }
+
     for (;;) {
+        fflush(STDOUT);
         __asm__ volatile("hlt");
     }
     

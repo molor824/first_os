@@ -39,26 +39,31 @@ int fb_write_pixel(point_t point, color_t color) {
 }
 void fb_write_char(point_t origin, char ch, color_t fg, color_t bg) {
     glyph_t glyph = glyphs[(int)ch];
-    int draw_x = origin.x + glyph.bitmap_left;
-    int draw_y = origin.y - glyph.bitmap_top;
-
-    for (int y = 0; y < glyph.rows; y++) {
-        int py = draw_y + y;
+    int min_y = FONT_ASCENDER - glyph.bitmap_top;
+    int min_x = glyph.bitmap_left;
+    int max_y = min_y + glyph.rows;
+    int max_x = min_x + glyph.width;
+    
+    for (int y = 0; y < FONT_LINE_HEIGHT; y++) {
+        int py = origin.y + y;
         if (py < 0 || py >= framebuffer_info->height) continue;
-        for (int x = 0; x < glyph.width; x++) {
-            int px = draw_x + x;
-            if (px < 0 || px >= framebuffer_info->width) continue;
-            int buffer_index = x;
-            if (glyph.pitch >= 0) buffer_index += glyph.pitch * y;
-            else buffer_index += -glyph.pitch * (glyph.rows - y - 1);
+        for (int x = 0; x < FONT_ADVANCE; x++) {
+            int px = origin.x + x;
+            if (px < 0 || px >= framebuffer_info->height) continue;
 
-            uint8_t value = glyph.buffer[buffer_index];
-            color_t color = {
-                .r = fg.r * value / 255 + bg.r * (255 - value) / 255,
-                .g = fg.g * value / 255 + bg.g * (255 - value) / 255,
-                .b = fg.b * value / 255 + bg.b * (255 - value) / 255
-            };
-            
+            color_t color = bg;
+            if (x >= min_x && x < max_x && y >= min_y && y < max_y) {
+                int glyph_x = x - min_x;
+                int glyph_y = y - min_y;
+                int buffer_index = glyph_x;
+                if (glyph.pitch >= 0) buffer_index += glyph.pitch * glyph_y;
+                else buffer_index += -glyph.pitch * (glyph.rows - glyph_y - 1);
+
+                uint8_t value = glyph.buffer[buffer_index];
+                color.r = ((int)fg.r * (int)value + (int)bg.r * (int)(255 - value)) / 255;
+                color.g = ((int)fg.g * (int)value + (int)bg.g * (int)(255 - value)) / 255;
+                color.b = ((int)fg.b * (int)value + (int)bg.b * (int)(255 - value)) / 255;
+            }
             fb_write_pixel((point_t){px, py}, color);
         }
     }

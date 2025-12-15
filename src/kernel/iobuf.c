@@ -58,8 +58,6 @@ void buf_puts(const char *s) {
     }
 }
 void buf_flush(void) {
-    fb_clear();
-
     size_t fb_width = framebuffer_info->width;
     size_t fb_height = framebuffer_info->height;
     size_t text_rows = fb_height / FONT_LINE_HEIGHT;
@@ -87,24 +85,25 @@ void buf_flush(void) {
         }
     }
 
-    point_t pen = {.y = FONT_ASCENDER};
-    for (size_t cursor = start_cursor; cursor < buf_size; cursor++) {
-        char ch = *buf_get(cursor);
-        if (ch == '\n') {
-            pen.y += FONT_LINE_HEIGHT;
-            pen.x = 0;
-        } else if (ch == '\r') {
-            pen.x = 0;
-        } else {
-            fb_write_char(pen, ch, buf_foreground, buf_background);
-            pen.x += FONT_ADVANCE;
-            if (pen.x >= fb_width) {
-                pen.x = 0;
-                pen.y += FONT_LINE_HEIGHT;
+    size_t cursor = start_cursor;
+    for (size_t row = 0; row < text_rows; row++) {
+        bool retry = false;
+        size_t column = 0;
+        for (; column < text_cols && cursor < buf_size; column++) {
+            char ch = *buf_get(cursor);
+            cursor++;
+            if (ch == '\n' || ch == '\r') {
+                retry = ch == '\r';
+                break;
             }
+            fb_write_char((point_t){.x = column * FONT_ADVANCE, .y = row * FONT_LINE_HEIGHT}, ch, buf_foreground, buf_background);
         }
-        if (pen.y >= fb_height) {
-            break;
+        if (retry) {
+            row--;
+            continue;
+        }
+        for (; column < text_cols; column++) {
+            fb_write_char((point_t){.x = column * FONT_ADVANCE, .y = row * FONT_LINE_HEIGHT}, 0, buf_foreground, buf_background);
         }
     }
 }
