@@ -2,6 +2,7 @@
 #include "pic.h"
 #include "io.h"
 #include "stdio.h"
+#include "int_event.h"
 
 #define MASTER_PIC_CMD 0x20
 #define MASTER_PIC_DAT 0x21
@@ -55,19 +56,19 @@ void PIC_init(void) {
 }
 
 static void IRQ_timer(void) {
+    event_push_back((int_event_t){
+        .type = INT_TIMER
+    });
 }
 
 #define KBD_DATA 0x60
 #define KBD_STATUS 0x64
 
 static void IRQ_keyboard(void) {
-    uint8_t scancode = inb(KBD_DATA);
-    
-    if (scancode & 0x80) {
-        printf("Released %d\n", scancode & ~0x80);
-    } else {
-        printf("Pressed %d\n", scancode);
-    }
+    event_push_back((int_event_t){
+        .type = INT_KEYBOARD,
+        .kbd_scancode = inb(KBD_DATA)
+    });
 }
 
 void (*IRQ_callbacks[16])(void) = {

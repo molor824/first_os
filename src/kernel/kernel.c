@@ -9,6 +9,7 @@
 #include "idt.h"
 #include "pic.h"
 #include "kernel.h"
+#include "int_event.h"
 
 #if defined(__linux__)
 #error "The compiler is not cross-compiler"
@@ -100,8 +101,22 @@ void main(void) {
         if (i % 8 == 7) printf("\n");
     }
 
+    fflush(STDOUT);
+
     for (;;) {
-        fflush(STDOUT);
+        int_event_t event;
+        while (event_pop_front(&event)) {
+            switch (event.type) {
+                case INT_KEYBOARD:
+                printf("Scancode: %x\n", event.kbd_scancode);
+                break;
+                case INT_TIMER:
+                fflush(STDOUT);
+                break;
+                default:
+                break;
+            }
+        }
         __asm__ volatile("hlt");
     }
     
