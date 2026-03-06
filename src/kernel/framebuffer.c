@@ -6,7 +6,7 @@
 framebuffer_info_t *framebuffer_info;
 
 void fb_init(void) {
-    framebuffer_info->address = mmap(framebuffer_info->address, framebuffer_info->height * framebuffer_info->pitch);
+    framebuffer_info->address = vmem_map(framebuffer_info->address, framebuffer_info->height * framebuffer_info->pitch);
 }
 void fb_pixel_map_color(uint8_t *pixel, color_t color) {
     uint32_t bytes_per_pixel = framebuffer_info->bpp / 8;

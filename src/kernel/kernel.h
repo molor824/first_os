@@ -28,6 +28,6 @@ extern uint32_t page_directory_entries[1024] __attribute__((aligned(4096)));
 extern uint32_t page_tables_entries[1024 * 1024] __attribute__((aligned(4096)));
 extern size_t kernel_end_addr;
 extern boot_info_t *boot_info;
-void *mmap(void *mem, size_t size);
+void *vmem_map(void *mem, size_t size);
 
 #endif

@@ -35,9 +35,9 @@ uint32_t page_tables_entries[1024 * 1024];
 size_t kernel_end_addr = (size_t)&KERNEL_ADDR;
 boot_info_t *boot_info;
 
-void *mmap(void *mem, size_t size) {
-    size_t start_addr = (size_t)mem & -4096;
-    size_t end_addr = (size_t)mem + size;
+void *vmem_map(void *phys_mem, size_t size) {
+    size_t start_addr = (size_t)phys_mem & -4096;
+    size_t end_addr = (size_t)phys_mem + size;
     size_t phys_addr = start_addr;
     size_t offset = kernel_end_addr - start_addr;
     while (phys_addr < end_addr) {
@@ -49,14 +49,14 @@ void *mmap(void *mem, size_t size) {
         kernel_end_addr += 4096;
     }
     REFRESH_CR3();
-    return (void*)((size_t)mem + offset);
+    return (void*)((size_t)phys_mem + offset);
 }
 void bootinfo_init(void) {
-    boot_info_t *boot_info_v = mmap(boot_info, sizeof(boot_info_t));
+    boot_info_t *boot_info_v = vmem_map(boot_info, sizeof(boot_info_t));
     while ((size_t)boot_info_v + boot_info_v->total_size > kernel_end_addr) {
         size_t allocated_size = kernel_end_addr - (size_t)boot_info_v;
         size_t remaining_size = boot_info_v->total_size - allocated_size;
-        mmap((void*)boot_info + allocated_size, remaining_size);
+        vmem_map((void*)boot_info + allocated_size, remaining_size);
     }
 
     boot_info = boot_info_v;
@@ -91,16 +91,17 @@ void main(void) {
     _init();
 
     printf("Kernel: %p\n", &KERNEL_ADDR);
+    printf("Kernel physical address: %p\n", &_kernel_start);
     printf("Total kernel size in memory: %u bytes\n", (size_t)&_kernel_end - (size_t)&KERNEL_ADDR - (size_t)&_kernel_start);
-    printf("Hello, World!\n");
-    printf("Welcome to My first OS!\n");
-
+    
     printf("Full ASCII test\n");
     for (int i = ' '; i < 128; i++) {
         printf("%c", i);
         if (i % 8 == 7) printf("\n");
     }
-
+    
+    printf("Hello, World!\n");
+    printf("Welcome to My first OS!\n");
     fflush(STDOUT);
 
     for (;;) {
@@ -114,6 +115,7 @@ void main(void) {
                 fflush(STDOUT);
                 break;
                 default:
+                printf("UNKNOWN EVENT: %x\n", event.type);
                 break;
             }
         }

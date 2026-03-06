@@ -55,14 +55,14 @@ void PIC_init(void) {
     }
 }
 
+#define KBD_DATA 0x60
+#define KBD_STATUS 0x64
+
 static void IRQ_timer(void) {
     event_push_back((int_event_t){
         .type = INT_TIMER
     });
 }
-
-#define KBD_DATA 0x60
-#define KBD_STATUS 0x64
 
 static void IRQ_keyboard(void) {
     event_push_back((int_event_t){

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define INT_EVENT_QUEUE_SIZE 0x100
+#define INT_EVENT_QUEUE_SIZE 0x1000
 
 typedef enum {
     INT_NULL,
