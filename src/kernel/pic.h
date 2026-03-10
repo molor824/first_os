@@ -9,8 +9,8 @@
 #define SLAVE_VECTOR_OFFSET 0x28
 
 void PIC_sendEOI(uint8_t irq);
-void IRQ_set_mask(uint8_t IRQ_line);
-void IRQ_clear_mask(uint8_t IRQ_line);
+void PIC_set_mask(uint8_t IRQ_line);
+void PIC_clear_mask(uint8_t IRQ_line);
 void PIC_remap(int offset1, int offset2);
 void PIC_disable(void);
 uint16_t PIC_get_irr(void);

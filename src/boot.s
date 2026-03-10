@@ -44,7 +44,7 @@ stack_top:
 .section .multiboot.text, "a"
 .extern kernel_main
 
-.global _start
+.globl _start
 .type _start, @function
 _start:
     // Initialize stack

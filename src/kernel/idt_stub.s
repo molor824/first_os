@@ -5,6 +5,7 @@
 isr_stub_\index:
     pushal
     pushl $\index
+    cld
     call \callback
     add $4, %esp
     popal

@@ -15,10 +15,6 @@ static bool idt_vectors[256];
 void exception_handler(int index) {
     printf("EXCEPTION: %d\n", index);
     fflush(STDOUT);
-    for (;;) {
-        __asm__ volatile("cli");
-        __asm__ volatile("hlt");
-    }
 }
 void irq_handler(int index) {
     size_t irq = index - MASTER_VECTOR_OFFSET;
@@ -31,8 +27,9 @@ static void idt_set_descriptor(uint8_t, void *, uint8_t);
 
 void idt_init(void) {
     for (size_t vector = 0; &isr_stub_table + vector < &isr_stub_table_end; vector++) {
-        if (vector >= MASTER_VECTOR_OFFSET && vector < MASTER_VECTOR_OFFSET + 16 && IRQ_callbacks[vector - MASTER_VECTOR_OFFSET] == NULL) {
-            continue;
+        if (vector >= MASTER_VECTOR_OFFSET && vector < MASTER_VECTOR_OFFSET + 16) {
+            if (!IRQ_callbacks[vector - MASTER_VECTOR_OFFSET]) continue;
+            PIC_set_mask(vector - MASTER_VECTOR_OFFSET);
         }
         // 0x8E is 32-bit interrupt gate (see https://wiki.osdev.org/Interrupt_Descriptor_Table#Structure_on_x86-64)
         idt_set_descriptor(vector, (&isr_stub_table)[vector], 0x8E);
@@ -58,5 +55,4 @@ static void idt_lidt(void) {
     idtr.limit = (uint16_t)(sizeof(idt_entries) - 1);
 
     __asm__ volatile("lidt %0" : : "m"(idtr));
-    __asm__ volatile("sti");
 }

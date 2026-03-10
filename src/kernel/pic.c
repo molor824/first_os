@@ -2,7 +2,8 @@
 #include "pic.h"
 #include "io.h"
 #include "stdio.h"
-#include "int_event.h"
+#include "iobuf.h"
+#include "kbd.h"
 
 #define MASTER_PIC_CMD 0x20
 #define MASTER_PIC_DAT 0x21
@@ -42,6 +43,9 @@
 #define PIC_READ_IRR 0x0A // OCW3 
 #define PIC_READ_ISR 0x0B
 
+#define KBD_DATA 0x60
+#define KBD_STATUS 0x64
+
 #define outb_and_wait(port, value) \
     outb(port, value); \
     io_wait()
@@ -49,26 +53,17 @@
 void PIC_init(void) {
     PIC_remap(MASTER_VECTOR_OFFSET, SLAVE_VECTOR_OFFSET);
     PIC_disable();
-    for (int i = 0; i < 16; i++) {
-        if (IRQ_callbacks[i])
-            IRQ_clear_mask(i);
-    }
 }
 
-#define KBD_DATA 0x60
-#define KBD_STATUS 0x64
-
 static void IRQ_timer(void) {
-    event_push_back((int_event_t){
-        .type = INT_TIMER
-    });
+    fflush(STDOUT);
 }
 
 static void IRQ_keyboard(void) {
-    event_push_back((int_event_t){
-        .type = INT_KEYBOARD,
-        .kbd_scancode = inb(KBD_DATA)
-    });
+    int scancode = inb(KBD_DATA);
+    kbd_push(scancode);
+    char ch = kbd_charcode();
+    if (ch != '\0') buf_putc(ch);
 }
 
 void (*IRQ_callbacks[16])(void) = {
@@ -106,7 +101,7 @@ void PIC_disable(void) {
     outb(MASTER_PIC_DAT, 0xff);
     outb(SLAVE_PIC_DAT, 0xff);
 }
-void IRQ_set_mask(uint8_t IRQ_line) {
+void PIC_set_mask(uint8_t IRQ_line) {
     uint16_t port;
     if (IRQ_line < 8) {
         port = MASTER_PIC_DAT;
@@ -117,7 +112,7 @@ void IRQ_set_mask(uint8_t IRQ_line) {
 
     outb(port, inb(port) | (1 << IRQ_line));
 }
-void IRQ_clear_mask(uint8_t IRQ_line) {
+void PIC_clear_mask(uint8_t IRQ_line) {
     uint16_t port;
 
     if (IRQ_line < 8) {
