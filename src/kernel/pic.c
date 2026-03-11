@@ -1,9 +1,10 @@
 #include <stdint.h>
 #include "pic.h"
-#include "io.h"
+#include "inst.h"
 #include "stdio.h"
 #include "iobuf.h"
 #include "kbd.h"
+#include "irq_event.h"
 
 #define MASTER_PIC_CMD 0x20
 #define MASTER_PIC_DAT 0x21
@@ -56,14 +57,16 @@ void PIC_init(void) {
 }
 
 static void IRQ_timer(void) {
-    fflush(STDOUT);
+    irq_event_push((irq_event_t) {
+        .type = IRQ_EVENT_TIM
+    });
 }
 
 static void IRQ_keyboard(void) {
-    int scancode = inb(KBD_DATA);
-    kbd_push(scancode);
-    char ch = kbd_charcode();
-    if (ch != '\0') buf_putc(ch);
+    irq_event_push((irq_event_t) {
+        .type = IRQ_EVENT_KBD,
+        .scancode = inb(KBD_DATA)
+    });
 }
 
 void (*IRQ_callbacks[16])(void) = {

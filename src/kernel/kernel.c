@@ -9,6 +9,9 @@
 #include "idt.h"
 #include "pic.h"
 #include "kernel.h"
+#include "kbd.h"
+#include "inst.h"
+#include "irq_event.h"
 
 #if defined(__linux__)
 #error "The compiler is not cross-compiler"
@@ -103,10 +106,23 @@ void main(void) {
     printf("Welcome to My first OS!\n");
     fflush(STDOUT);
 
-    __asm__ volatile("sti");
+    sti();
 
     for (;;) {
-        __asm__ volatile("hlt");
+        irq_event_t event;
+        while (irq_event_pop(&event)) {
+            switch (event.type) {
+                case IRQ_EVENT_TIM:
+                    fflush(STDOUT);
+                    break;
+                case IRQ_EVENT_KBD:
+                    kbd_push(event.scancode);
+                    char c = kbd_charcode();
+                    if (c) printf("%c", c);
+                    break;
+            }
+        }
+        hlt();
     }
     
     _fini();
@@ -150,8 +166,6 @@ void kernel_main(void) {
         "jmp *%ecx"
     );
 
-    __asm__ volatile("cli");
-    for (;;) {
-        __asm__ volatile("hlt");
-    }
+    cli();
+    for (;;) hlt();
 }
