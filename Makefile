@@ -69,4 +69,4 @@ $(OS_ISO): $(GRUB_CFG) $(OS_BIN)
 	mkdir -p $(ISO_DIR)/boot/grub
 	cp $(OS_BIN) $(ISO_OS_BIN)
 	cp $(GRUB_CFG) $(ISO_GRUB_CFG)
-	grub-mkrescue -o $(OS_ISO) $(ISO_DIR)
+	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(OS_ISO) $(ISO_DIR)

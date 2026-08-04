@@ -7,8 +7,8 @@ SOURCE_PATH = f"{directory}/../../src/kernel/default_font.c"
 INCLUDE_PATH = SOURCE_PATH.replace(".c", ".h")
 INCLUDE_FILENAME = os.path.basename(INCLUDE_PATH)
 
-face = freetype.Face(f"{directory}/ubuntu-font-family-0.83/UbuntuMono-R.ttf")
-face.set_pixel_sizes(0, 16)
+face = freetype.Face(f"{directory}/ComicMono/ComicMono.ttf")
+face.set_pixel_sizes(0, 14)
 
 class Character:
     bitmap_left: int

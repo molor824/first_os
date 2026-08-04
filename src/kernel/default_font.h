@@ -5,8 +5,8 @@ typedef struct {
     int rows, width, pitch;
     uint8_t *buffer;
 } glyph_t;
-#define FONT_ASCENDER 13
-#define FONT_DESCENDER -3
+#define FONT_ASCENDER 25
+#define FONT_DESCENDER -10
 #define FONT_ADVANCE 8
 #define FONT_LINE_HEIGHT 16
 extern glyph_t glyphs[256];
