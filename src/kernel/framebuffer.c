@@ -13,8 +13,8 @@ void fb_pixel_map_color(uint8_t *pixel, color_t color) {
     memset(pixel, 0, bytes_per_pixel);
 
     color.r = color.r >> (8 - framebuffer_info->red_mask_size);
-    color.g = color.g >> (8 - framebuffer_info->red_mask_size);
-    color.b = color.b >> (8 - framebuffer_info->red_mask_size);
+    color.g = color.g >> (8 - framebuffer_info->green_mask_size);
+    color.b = color.b >> (8 - framebuffer_info->blue_mask_size);
 
     pixel[framebuffer_info->red_field_position / 8] |= color.r << (framebuffer_info->red_field_position % 8);
     pixel[framebuffer_info->red_field_position / 8 + 1] |= color.r >> (8 - framebuffer_info->red_field_position % 8);
@@ -37,19 +37,19 @@ int fb_write_pixel(point_t point, color_t color) {
     fb_pixel_map_color(&framebuffer_info->address[index], color);
     return 0;
 }
-void fb_write_char(point_t origin, char ch, color_t fg, color_t bg) {
-    glyph_t glyph = glyphs[(int)ch];
+void fb_write_char(point_t origin, unsigned char ch, color_t fg, color_t bg) {
+    glyph_t glyph = glyphs[ch];
     int min_y = FONT_ASCENDER - glyph.bitmap_top;
     int min_x = glyph.bitmap_left;
     int max_y = min_y + glyph.rows;
     int max_x = min_x + glyph.width;
-    
+
     for (int y = 0; y < FONT_LINE_HEIGHT; y++) {
         int py = origin.y + y;
         if (py < 0 || py >= framebuffer_info->height) continue;
         for (int x = 0; x < FONT_ADVANCE; x++) {
             int px = origin.x + x;
-            if (px < 0 || px >= framebuffer_info->height) continue;
+            if (px < 0 || px >= framebuffer_info->width) continue;
 
             color_t color = bg;
             if (x >= min_x && x < max_x && y >= min_y && y < max_y) {

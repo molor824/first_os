@@ -19,8 +19,8 @@ class Character:
     buffer: list
 
 glyphs = [None] * 256
-ascender = face.ascender
-descender = face.descender
+ascender = face.size.ascender
+descender = face.size.descender
 advance = face.size.max_advance
 line_height = face.size.height # Stored in fixed point integer with 6 bits being fraction
 

@@ -3,6 +3,7 @@
 #include "stdio.h"
 #include "pic.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 extern void *isr_stub_table;
 extern void *isr_stub_table_end;
@@ -13,7 +14,16 @@ idtr_t idtr;
 static bool idt_vectors[256];
 
 void exception_handler(int index) {
-    printf("EXCEPTION: %d\n", index);
+    switch (index) {
+        case 14:;
+            uintptr_t value;
+            asm volatile("mov %%cr2, %0" : "=r"(value));
+            printf("Page fault at: %x\n", value);
+            break;
+        default:
+            printf("EXCEPTION: %d\n", index);
+            break;
+    }
     fflush(STDOUT);
 }
 void irq_handler(int index) {

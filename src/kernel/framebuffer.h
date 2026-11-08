@@ -34,7 +34,7 @@ extern framebuffer_info_t *framebuffer_info;
 extern void fb_clear(void);
 extern void fb_pixel_map_color(uint8_t *pixel, color_t color);
 extern int fb_write_pixel(point_t point, color_t color);
-extern void fb_write_char(point_t origin, char ch, color_t fg, color_t bg);
+extern void fb_write_char(point_t origin, unsigned char ch, color_t fg, color_t bg);
 extern void fb_init(void);
 
 #endif
