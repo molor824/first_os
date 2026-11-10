@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include "string.h"
 #include "stdio.h"
-#include "iobuf.h"
 #include "file.h"
 #include "gdt.h"
 #include "idt.h"
@@ -12,6 +11,7 @@
 #include "kbd.h"
 #include "inst.h"
 #include "irq_event.h"
+#include "framebuffer.h"
 
 #if defined(__linux__)
 #error "The compiler is not cross-compiler"
@@ -32,8 +32,9 @@ extern char KERNEL_ADDR;
 extern void _init(void);
 extern void _fini(void);
 
-uint32_t page_directory_entries[1024];
-uint32_t page_tables_entries[1024 * 1024];
+uint32_t page_directory_entries[1024]; __attribute__((aligned(4096)))
+uint32_t page_tables_entries[1024 * 1024]; __attribute__((aligned(4096)))
+
 size_t kernel_end_addr = (size_t)&KERNEL_ADDR;
 boot_info_t *boot_info;
 
@@ -77,7 +78,7 @@ void bootinfo_init(void) {
         tag_offset = (tag_offset + tag->size + 7) & -8;
     }
 }
-void main(void) {
+void virtual_main(void) {
     // Unmap identity
     page_directory_entries[0] = 0;
 
@@ -95,13 +96,13 @@ void main(void) {
     printf("Kernel: %p\n", &KERNEL_ADDR);
     printf("Kernel physical address: %p\n", &_kernel_start);
     printf("Total kernel size in memory: %u bytes\n", (size_t)&_kernel_end - (size_t)&KERNEL_ADDR - (size_t)&_kernel_start);
-    
+
     printf("Full ASCII test\n");
     for (int i = ' '; i < 128; i++) {
         printf("%c", i);
         if (i % 8 == 7) printf("\n");
     }
-    
+
     printf("Hello, World!\n");
     printf("Welcome to My first OS!\n");
     fflush(STDOUT);
@@ -124,8 +125,11 @@ void main(void) {
         }
         hlt();
     }
-    
-    _fini();
+
+    for (;;) {
+        cli();
+        hlt();
+    }
 }
 
 __attribute__((section(".multiboot.text")))
@@ -135,7 +139,7 @@ void kernel_main(void) {
     // Iterating kernel_start to kernel_end, enable page tables entries, and corresponding page directory entries
     size_t address = (size_t)&KERNEL_ADDR;
     size_t phys_address = 0;
-    
+
     while (address < (size_t)&_kernel_end) {
         if (address % PDE_RANGE == 0) {
             *(size_t*)((void*)&page_directory_entries[address / PDE_RANGE] - (void*)&KERNEL_ADDR) =
@@ -149,7 +153,7 @@ void kernel_main(void) {
     }
 
     *(size_t*)((void*)&kernel_end_addr - (void*)&KERNEL_ADDR) = address;
-    
+
     // Identity mapping
     *(size_t*)((void*)&page_directory_entries[0] - (void*)&KERNEL_ADDR) = ((size_t)&page_tables_entries[(size_t)&KERNEL_ADDR / 4096] - (size_t)&KERNEL_ADDR) | 3;
 
@@ -162,10 +166,12 @@ void kernel_main(void) {
         "or $0x80010000, %ecx\n"
         "mov %ecx, %cr0\n"
         "mov $stack_top, %esp\n"
-        "mov $main, %ecx\n"
+        "mov $virtual_main, %ecx\n"
         "jmp *%ecx"
     );
 
-    cli();
-    for (;;) hlt();
+    for (;;) {
+        cli();
+        hlt();
+    }
 }

@@ -2,6 +2,8 @@
 #include "default_font.h"
 #include "string.h"
 #include "kernel.h"
+#include <stddef.h>
+#include <stdint.h>
 
 framebuffer_info_t *framebuffer_info;
 
@@ -10,20 +12,14 @@ void fb_init(void) {
 }
 void fb_pixel_map_color(uint8_t *pixel, color_t color) {
     uint32_t bytes_per_pixel = framebuffer_info->bpp / 8;
-    memset(pixel, 0, bytes_per_pixel);
+    uint32_t p =
+        ((uint32_t)(color.r >> (8 - framebuffer_info->red_mask_size)) << framebuffer_info->red_field_position) |
+        ((uint32_t)(color.g >> (8 - framebuffer_info->green_mask_size)) << framebuffer_info->green_field_position) |
+        ((uint32_t)(color.b >> (8 - framebuffer_info->blue_mask_size)) << framebuffer_info->blue_field_position);
 
-    color.r = color.r >> (8 - framebuffer_info->red_mask_size);
-    color.g = color.g >> (8 - framebuffer_info->green_mask_size);
-    color.b = color.b >> (8 - framebuffer_info->blue_mask_size);
-
-    pixel[framebuffer_info->red_field_position / 8] |= color.r << (framebuffer_info->red_field_position % 8);
-    pixel[framebuffer_info->red_field_position / 8 + 1] |= color.r >> (8 - framebuffer_info->red_field_position % 8);
-
-    pixel[framebuffer_info->green_field_position / 8] |= color.g << (framebuffer_info->green_field_position % 8);
-    pixel[framebuffer_info->green_field_position / 8 + 1] |= color.g >> (8 - framebuffer_info->green_field_position % 8);
-
-    pixel[framebuffer_info->blue_field_position / 8] |= color.b << (framebuffer_info->blue_field_position % 8);
-    pixel[framebuffer_info->blue_field_position / 8 + 1] |= color.b >> (8 - framebuffer_info->blue_field_position % 8);
+    for (uint32_t i = 0; i < bytes_per_pixel; i++) {
+        pixel[i] = p >> (8 * i);
+    }
 }
 void fb_clear() {
     memset(framebuffer_info->address, 0, framebuffer_info->pitch * framebuffer_info->height);

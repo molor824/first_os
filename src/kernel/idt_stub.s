@@ -1,14 +1,19 @@
 .extern exception_handler
 .extern irq_handler
 
-.macro isr_stub_wrapper index, callback
+.macro isr_stub_wrapper index, callback, has_err=0
 isr_stub_\index:
+    .if \has_err == 0
+        pushl $0
+    .endif
     pushal
     pushl $\index
+    pushl %esp
     cld
     call \callback
-    add $4, %esp
+    add $8, %esp
     popal
+    add $4, %esp
     iret
 .endm
 
@@ -20,16 +25,16 @@ isr_stub_wrapper 4, exception_handler
 isr_stub_wrapper 5, exception_handler
 isr_stub_wrapper 6, exception_handler
 isr_stub_wrapper 7, exception_handler
-isr_stub_wrapper 8, exception_handler
+isr_stub_wrapper 8, exception_handler, 1
 isr_stub_wrapper 9, exception_handler
-isr_stub_wrapper 10, exception_handler
-isr_stub_wrapper 11, exception_handler
-isr_stub_wrapper 12, exception_handler
-isr_stub_wrapper 13, exception_handler
-isr_stub_wrapper 14, exception_handler
+isr_stub_wrapper 10, exception_handler, 1
+isr_stub_wrapper 11, exception_handler, 1
+isr_stub_wrapper 12, exception_handler, 1
+isr_stub_wrapper 13, exception_handler, 1
+isr_stub_wrapper 14, exception_handler, 1
 isr_stub_wrapper 15, exception_handler
 isr_stub_wrapper 16, exception_handler
-isr_stub_wrapper 17, exception_handler
+isr_stub_wrapper 17, exception_handler, 1
 isr_stub_wrapper 18, exception_handler
 isr_stub_wrapper 19, exception_handler
 isr_stub_wrapper 20, exception_handler

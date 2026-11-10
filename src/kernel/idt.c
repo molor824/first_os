@@ -13,21 +13,22 @@ idtr_t idtr;
 
 static bool idt_vectors[256];
 
-void exception_handler(int index) {
-    switch (index) {
+
+void exception_handler(int_registers_t *regs) {
+    switch (regs->vector) {
         case 14:;
             uintptr_t value;
             asm volatile("mov %%cr2, %0" : "=r"(value));
-            printf("Page fault at: %x\n", value);
+            printf("Page fault at: %x, attempted to access address: %x\n", regs->eip, value);
             break;
         default:
-            printf("EXCEPTION: %d\n", index);
+            printf("EXCEPTION: %d at %x\n", regs->vector, regs->eip);
             break;
     }
     fflush(STDOUT);
 }
-void irq_handler(int index) {
-    size_t irq = index - MASTER_VECTOR_OFFSET;
+void irq_handler(int_registers_t *regs) {
+    size_t irq = regs->vector - MASTER_VECTOR_OFFSET;
     IRQ_callbacks[irq]();
     PIC_sendEOI(irq);
 }
