@@ -1,9 +1,11 @@
 #ifndef __FRAMEBUFFER_H
 #define __FRAMEBUFFER_H
 
+#include "kernel.h"
 #include <stdint.h>
 
 typedef struct {
+    boot_tag_t tag;
     uint8_t *address;
     uint32_t address_high;
     uint32_t pitch;

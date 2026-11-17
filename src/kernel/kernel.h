@@ -12,11 +12,11 @@
     : : : "eax" \
 )
 #define FRAMEBUFFER_INFO 8
+#define MEMORY_MAP_INFO 6
 
 typedef struct {
     uint32_t type;
     uint32_t size;
-    uint8_t data[];
 } boot_tag_t;
 typedef struct {
     uint32_t total_size;
