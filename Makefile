@@ -1,4 +1,4 @@
-CFLAGS:=-ffreestanding -nostdlib -lgcc -std=gnu99 -Wall
+CFLAGS:=-ffreestanding -nostdlib -lgcc -std=gnu11 -Wall -no-pie -fno-pic -MMD -MP
 
 ifneq ($(RELEASE),1)
 CFLAGS:=$(CFLAGS) -g
@@ -16,6 +16,7 @@ QEMU:=qemu-system-i386
 
 KERNEL_SOURCES:=$(wildcard $(KERNEL_SRC_DIR)/*.c $(KERNEL_SRC_DIR)/*.s)
 KERNEL_OBJECTS:=$(patsubst $(KERNEL_SRC_DIR)/%.s, $(KERNEL_BUILD_DIR)/%.o, $(patsubst $(KERNEL_SRC_DIR)/%.c, $(KERNEL_BUILD_DIR)/%.o, $(KERNEL_SOURCES)))
+KERNEL_DEPS := $(KERNEL_OBJECTS:.o=.d)
 
 # Boot sources/objects
 
@@ -56,10 +57,10 @@ build:
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(KERNEL_BUILD_DIR)
 
-qemu:
+qemu: all
 	$(QEMU) -cdrom $(OS_ISO)
 
-qemu-debug:
+qemu-debug: all
 	$(QEMU) -s -S -cdrom $(OS_ISO)
 
 clean:
@@ -72,3 +73,5 @@ $(OS_ISO): $(GRUB_CFG) $(OS_BIN)
 	cp $(OS_BIN) $(ISO_OS_BIN)
 	cp $(GRUB_CFG) $(ISO_GRUB_CFG)
 	grub-mkrescue $(GRUB_FLAGS) || grub2-mkrescue $(GRUB_FLAGS)
+
+-include $(KERNEL_DEPS)

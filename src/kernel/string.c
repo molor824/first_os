@@ -1,5 +1,6 @@
 #include "string.h"
 #include <stddef.h>
+#include <stdint.h>
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 unsigned str_pack32(const void *str) {
@@ -33,56 +34,74 @@ char *str_unpack32(unsigned packed, char *str) {
 #endif
 
 void* memcpy(void *dst, const void *src, size_t n) {
-    void *dst_start = dst, *dst_end = dst + n;
-    while (dst < dst_end) {
-        if ((size_t)dst % _Alignof(unsigned) == 0 && (size_t)src % _Alignof(unsigned) == 0) {
+    uint8_t *pdst = dst;
+    const uint8_t *psrc = src;
+    uint8_t *pend = &pdst[n];
+    while (pdst < pend) {
+        if ((uintptr_t)pdst % _Alignof(uint32_t) == 0 && (uintptr_t)psrc % _Alignof(uint32_t) == 0) {
             goto aligned_loop;
         }
-        *(char*)dst = *(char*)src;
-        dst++;
-        src++;
+        *pdst = *psrc;
+        pdst++;
+        psrc++;
     }
-    return dst_start;
-aligned_loop:
-    while (dst < dst_end) {
-        if ((size_t)(dst_end - dst) < sizeof(unsigned)) goto end_loop;
-        *(unsigned*)dst = *(unsigned*)src;
-        dst += sizeof(unsigned);
-        src += sizeof(unsigned);
+    return dst;
+aligned_loop:;
+    while (pdst < pend) {
+        if ((uintptr_t)pend - (uintptr_t)pdst < sizeof(uint32_t)) goto end_loop;
+        *(uint32_t*)pdst = *(uint32_t*)psrc;
+        pdst += sizeof(uint32_t);
+        psrc += sizeof(uint32_t);
     }
-    return dst_start;
+    return dst;
 end_loop:
-    while (dst < dst_end) {
-        *(char*)dst = *(char*)src;
-        dst++;
-        src++;
+    while (pdst < pend) {
+        *pdst = *psrc;
+        pdst++;
+        psrc++;
     }
-    return dst_start;
+    return dst;
+}
+void* memmove(void *dst, const void *src, size_t n) {
+    uint8_t *pdst = dst;
+    const uint8_t *psrc = src;
+
+    if ((uintptr_t)src > (uintptr_t)dst) {
+        for (size_t i = 0; i < n; i++) {
+            pdst[i] = psrc[i];
+        }
+    } else if ((uintptr_t)src < (uintptr_t)dst) {
+        for (size_t i = n; i > 0; i--) {
+            pdst[i - 1] = psrc[i - 1];
+        }
+    }
+
+    return dst;
 }
 void* memset(void *s, int c, size_t n) {
-    char ch = c;
-    unsigned packed = ch | ch << 8 | ch << 16 | ch << 24;
-    void *start = s;
-    void *end = s + n;
-    while (s < end) {
-        if ((size_t)s % _Alignof(unsigned) == 0) goto packed_loop;
-        *(char*)s = ch;
-        s++;
+    uint8_t ch = c;
+    uint8_t *ps = s;
+    uint8_t *end = &ps[n];
+    while (ps < end) {
+        if ((uintptr_t)ps % _Alignof(uint32_t) == 0) goto packed_loop;
+        *ps = ch;
+        ps++;
     }
-    return start;
-packed_loop:
-    while (s < end) {
-        if ((size_t)(end - s) < sizeof(unsigned)) goto end_loop;
-        *(unsigned*)s = packed;
-        s += _Alignof(unsigned);
+    return s;
+packed_loop:;
+    uint32_t packed = ch | ch << 8 | ch << 16 | ch << 24;
+    while (ps < end) {
+        if ((uintptr_t)end - (uintptr_t)ps < sizeof(uint32_t)) goto end_loop;
+        *ps = packed;
+        ps += sizeof(uint32_t);
     }
-    return start;
+    return s;
 end_loop:
-    while (s < end) {
-        *(char*)s = ch;
-        s++;
+    while (ps < end) {
+        *ps = ch;
+        ps++;
     }
-    return start;
+    return s;
 }
 size_t strlen(const void* s) {
     size_t l = 0;
@@ -90,14 +109,15 @@ size_t strlen(const void* s) {
     return l;
 }
 int memcmp(const void *s1, const void *s2, size_t n) {
-    const unsigned char *p1 = s1;
-    const unsigned char *p2 = s2;
-    const unsigned char *end = p1 + n;
-    while (p1 < end) {
-        int diff = *p1 - *p2;
-        if (diff) return diff;
-        p1++;
-        p2++;
+    const uint8_t *p1 = s1;
+    const uint8_t *p2 = s2;
+
+    for (size_t i = 0; i < n; i++) {
+        if (p1[i] < p2[i])
+            return -1;
+        else if (p1[i] > p2[i])
+            return 1;
     }
+
     return 0;
 }

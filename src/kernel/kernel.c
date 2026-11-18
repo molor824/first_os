@@ -32,9 +32,8 @@ extern char KERNEL_ADDR;
 extern void _init(void);
 extern void _fini(void);
 
-// TODO: each page table entries should be allocated on its own 4096 alignment!
-// So somehow fucking figure out a way to not pre-allocate all of them and dynamically allocate more
-// fuck me...
+// NOTE to self: This is fine, because each PDE points to 1024 PTE, which is exactly 4096 in length
+// So no matter what this is aligned!
 uint32_t page_directory_entries[1024]; __attribute__((aligned(4096)))
 uint32_t page_tables_entries[1024 * 1024]; __attribute__((aligned(4096)))
 
@@ -49,8 +48,7 @@ void *vmem_map(void *phys_mem, size_t size) {
     while (phys_addr < end_addr) {
         if (vmem_end_addr % PDE_RANGE == 0) {
             // NOTE: PDE receives physical address of PTE, not virtual
-            size_t idx = vmem_end_addr / PDE_RANGE;
-            page_directory_entries[idx] = ((size_t)&page_tables_entries[idx * 1024] - (size_t)&KERNEL_ADDR) | 3;
+            page_directory_entries[vmem_end_addr / PDE_RANGE] = ((size_t)&page_tables_entries[vmem_end_addr / 4096] - (size_t)&KERNEL_ADDR) | 3;
         }
         page_tables_entries[vmem_end_addr / 4096] = phys_addr | 3;
         phys_addr += 4096;
@@ -88,6 +86,8 @@ void bootinfo_init(void) {
 void virtual_main(void) {
     // Unmap identity
     page_directory_entries[0] = 0;
+
+    phys_boot_info = boot_info;
 
     REFRESH_CR3();
 
@@ -142,7 +142,7 @@ void virtual_main(void) {
 
 __attribute__((section(".multiboot.text")))
 void kernel_main(void) {
-    __asm__ volatile("movl %%ebx, %0" : "=m"(*(void**)((size_t)&boot_info - (size_t)&KERNEL_ADDR)));
+    __asm__ volatile("movl %%ebx, %0" : "=m"(*(void**)((void*)&boot_info - (void*)&KERNEL_ADDR)));
     // Setup memory paging
     // Iterating kernel_start to kernel_end, enable page tables entries, and corresponding page directory entries
     size_t address = (size_t)&KERNEL_ADDR;
@@ -150,20 +150,21 @@ void kernel_main(void) {
 
     while (address < (size_t)&_kernel_end) {
         if (address % PDE_RANGE == 0) {
-            *(size_t*)((void*)&page_directory_entries[address / PDE_RANGE] - (void*)&KERNEL_ADDR) =
-                ((size_t)&page_tables_entries[address / 4096] - (size_t)&KERNEL_ADDR) | 3;
+            *(uint32_t*)((void*)&page_directory_entries[address / PDE_RANGE] - (void*)&KERNEL_ADDR) =
+                (uint32_t)((void*)&page_tables_entries[address / 4096] - (void*)&KERNEL_ADDR) | 3;
         }
         if (phys_address >= ((size_t)&_kernel_start & -4096)) {
-            *(size_t*)((void*)&page_tables_entries[address / 4096] - (void*)&KERNEL_ADDR) = phys_address | 3;
+            *(uint32_t*)((void*)&page_tables_entries[address / 4096] - (void*)&KERNEL_ADDR) = phys_address | 3;
         }
         address += 4096;
         phys_address += 4096;
     }
 
-    *(size_t*)((void*)&vmem_end_addr - (void*)&KERNEL_ADDR) = address;
+    *(uint32_t*)((void*)&vmem_end_addr - (void*)&KERNEL_ADDR) = address;
 
     // Identity mapping
-    *(size_t*)((void*)&page_directory_entries[0] - (void*)&KERNEL_ADDR) = ((size_t)&page_tables_entries[(size_t)&KERNEL_ADDR / 4096] - (size_t)&KERNEL_ADDR) | 3;
+    *(uint32_t*)((void*)&page_directory_entries[0] - (void*)&KERNEL_ADDR) =
+        ((size_t)&page_tables_entries[(size_t)&KERNEL_ADDR / 4096] - (size_t)&KERNEL_ADDR) | 3;
 
     // Store page directory entry address to cr3
     __asm__ volatile("mov %0, %%cr3" : : "r"((size_t)&page_directory_entries[0] - (size_t)&KERNEL_ADDR));
