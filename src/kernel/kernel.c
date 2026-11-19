@@ -68,8 +68,6 @@ void virtual_main(void) {
     idt_init();
     PIC_init();
 
-    _init();
-
     printf("Kernel: %p\n", &KERNEL_ADDR);
     printf("Kernel physical address: %p, kernel physical end address: %p\n", &_kernel_start, &_kernel_end - &KERNEL_ADDR);
     printf("Total kernel size in memory: %u bytes\n", (size_t)&_kernel_end - (size_t)&KERNEL_ADDR - (size_t)&_kernel_start);

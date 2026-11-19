@@ -31,9 +31,6 @@ extern char _kernel_end;
 extern char PDE_INDEX;
 extern char KERNEL_ADDR;
 
-extern void _init(void);
-extern void _fini(void);
-
 // NOTE to self: This is fine, because each PDE points to 1024 PTE, which is exactly 4096 in length
 // So no matter what this is aligned!
 extern uint32_t page_directory_entries[1024];
