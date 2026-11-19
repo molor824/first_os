@@ -1,5 +1,4 @@
-#ifndef __IO_BUF_H
-#define __IO_BUF_H
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
@@ -17,5 +16,3 @@ void buf_putc(char c);
 void buf_write(const void *buf, size_t count);
 void buf_puts(const char *s);
 void buf_flush(void);
-
-#endif

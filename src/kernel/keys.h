@@ -1,5 +1,4 @@
-#ifndef __KEYS_H
-#define __KEYS_H
+#pragma once
 
 #define KEY_ESC 0x1
 #define KEY_F1 0x3b
@@ -96,5 +95,3 @@
 #define KEY_NUMPAD_DIV 0xe035
 #define KEY_NUMPAD_ENTER 0xe01c
 #define KEY_NUMLOCK 0x45
-
-#endif

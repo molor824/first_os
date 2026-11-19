@@ -1,5 +1,4 @@
-#ifndef __MEM_H
-#define __MEM_H
+#pragma once
 
 #include "kernel.h"
 #include <stdint.h>
@@ -17,4 +16,5 @@ typedef struct {
     memmap_entries_t entries[];
 } __attribute__((packed)) memmap_info_t;
 
-#endif
+extern memmap_info_t *memmap_info;
+void *physmem_map(void *phys_mem, size_t size);

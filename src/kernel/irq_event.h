@@ -1,5 +1,4 @@
-#ifndef __IRQ_EVENT_H
-#define __IRQ_EVENT_H
+#pragma once
 
 #include <stdint.h>
 
@@ -21,5 +20,3 @@ int irq_event_push(irq_event_t src);
 
 // Returns: 0 - fail, 1 - success
 int irq_event_pop(irq_event_t* dst);
-
-#endif

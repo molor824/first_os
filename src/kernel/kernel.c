@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "mem.h"
 #include "string.h"
 #include "stdio.h"
-#include "file.h"
 #include "gdt.h"
 #include "idt.h"
 #include "pic.h"
@@ -21,48 +21,20 @@
 #error "Must be compiled with i686-elf compiler"
 #endif
 
-// _kernel_start is in physical addressing
-extern char _kernel_start;
-// _kernel_end is in virtual addressing
-extern char _kernel_end;
-
-extern char PDE_INDEX;
-extern char KERNEL_ADDR;
-
-extern void _init(void);
-extern void _fini(void);
-
 // NOTE to self: This is fine, because each PDE points to 1024 PTE, which is exactly 4096 in length
 // So no matter what this is aligned!
 uint32_t page_directory_entries[1024]; __attribute__((aligned(4096)))
 uint32_t page_tables_entries[1024 * 1024]; __attribute__((aligned(4096)))
-
 size_t vmem_end_addr = (size_t)&KERNEL_ADDR;
-boot_info_t *boot_info, *phys_boot_info;
 
-void *vmem_map(void *phys_mem, size_t size) {
-    size_t start_addr = (size_t)phys_mem & -4096;
-    size_t end_addr = (size_t)phys_mem + size;
-    size_t phys_addr = start_addr;
-    size_t offset = vmem_end_addr - start_addr;
-    while (phys_addr < end_addr) {
-        if (vmem_end_addr % PDE_RANGE == 0) {
-            // NOTE: PDE receives physical address of PTE, not virtual
-            page_directory_entries[vmem_end_addr / PDE_RANGE] = ((size_t)&page_tables_entries[vmem_end_addr / 4096] - (size_t)&KERNEL_ADDR) | 3;
-        }
-        page_tables_entries[vmem_end_addr / 4096] = phys_addr | 3;
-        phys_addr += 4096;
-        vmem_end_addr += 4096;
-    }
-    REFRESH_CR3();
-    return (void*)((size_t)phys_mem + offset);
-}
+boot_info_t *boot_info;
+
 void bootinfo_init(void) {
-    boot_info_t *boot_info_v = vmem_map(boot_info, sizeof(boot_info_t));
+    boot_info_t *boot_info_v = physmem_map(boot_info, sizeof(boot_info_t));
     while ((size_t)boot_info_v + boot_info_v->total_size > vmem_end_addr) {
         size_t allocated_size = vmem_end_addr - (size_t)boot_info_v;
         size_t remaining_size = boot_info_v->total_size - allocated_size;
-        vmem_map((void*)boot_info + allocated_size, remaining_size);
+        physmem_map((void*)boot_info + allocated_size, remaining_size);
     }
 
     boot_info = boot_info_v;
@@ -71,13 +43,13 @@ void bootinfo_init(void) {
     size_t tag_size = boot_info->total_size - sizeof(boot_info_t);
 
     while (tag_offset < tag_size) {
-        boot_tag_t *tag = (boot_tag_t*)&tag_address[tag_offset];
+        boot_tag_t *tag = (boot_tag_t*)(tag_address + tag_offset);
 
         if (tag->type == 0) break;
         if (tag->type == FRAMEBUFFER_INFO) {
             framebuffer_info = (framebuffer_info_t*)tag;
         } else if (tag->type == MEMORY_MAP_INFO) {
-
+            memmap_info = (memmap_info_t*)tag;
         }
 
         tag_offset = (tag_offset + tag->size + 7) & -8;
@@ -86,8 +58,6 @@ void bootinfo_init(void) {
 void virtual_main(void) {
     // Unmap identity
     page_directory_entries[0] = 0;
-
-    phys_boot_info = boot_info;
 
     REFRESH_CR3();
 
@@ -102,7 +72,6 @@ void virtual_main(void) {
 
     printf("Kernel: %p\n", &KERNEL_ADDR);
     printf("Kernel physical address: %p, kernel physical end address: %p\n", &_kernel_start, &_kernel_end - &KERNEL_ADDR);
-    printf("boot_info physical address: %p, boot_info total size: %u\n", phys_boot_info, boot_info->total_size);
     printf("Total kernel size in memory: %u bytes\n", (size_t)&_kernel_end - (size_t)&KERNEL_ADDR - (size_t)&_kernel_start);
 
     printf("Full ASCII test\n");

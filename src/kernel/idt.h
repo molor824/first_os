@@ -1,5 +1,4 @@
-#ifndef __IDT_H
-#define __IDT_H
+#pragma once
 
 #include <stdint.h>
 #include "gdt.h"
@@ -31,5 +30,3 @@ extern idtr_t idtr;
 void exception_handler(int_registers_t *);
 void irq_handler(int_registers_t *);
 void idt_init(void);
-
-#endif

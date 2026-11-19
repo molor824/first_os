@@ -1,9 +1,7 @@
-#ifndef __GDT_H
-#define __GDT_H
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
-#include "file.h"
 
 #define KERNEL_CODE_SEGMENT 1
 #define KERNEL_DATA_SEGMENT 2
@@ -21,5 +19,3 @@ typedef struct {
 extern uint64_t gdt_entries[6];
 
 void gdt_init(void);
-
-#endif

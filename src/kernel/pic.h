@@ -1,5 +1,4 @@
-#ifndef __PIC_H
-#define __PIC_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,5 +17,3 @@ uint16_t PIC_get_isr(void);
 void PIC_init(void);
 
 extern void (*IRQ_callbacks[16])(void);
-
-#endif

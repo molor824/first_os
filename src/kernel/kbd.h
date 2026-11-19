@@ -1,5 +1,4 @@
-#ifndef __KBD_H
-#define __KBD_H
+#pragma once
 
 // Pushes scancode
 void kbd_push(int scancode);
@@ -15,5 +14,3 @@ int kbd_scancode(void);
 // Returns '\0' if current scancode cannot be converted to character
 // Otherwise specific char
 char kbd_charcode(void);
-
-#endif

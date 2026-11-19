@@ -1,5 +1,4 @@
 #include "gdt.h"
-#include "file.h"
 #include "stdio.h"
 
 uint64_t gdt_entries[6];

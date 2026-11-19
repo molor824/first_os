@@ -24,12 +24,12 @@ BOOT_SRC:=$(SRC_DIR)/boot.s
 BOOT_OBJ:=$(BUILD_DIR)/boot.o
 
 LINKER_SRC:=$(SRC_DIR)/linker.ld
-OS_BIN:=$(BUILD_DIR)/first_os.bin
+OS_BIN:=$(BUILD_DIR)/first_os.elf
 
 OS_ISO:=$(BUILD_DIR)/first_os.iso
 GRUB_CFG:=$(SRC_DIR)/grub.cfg
 ISO_DIR:=$(BUILD_DIR)/isodir
-ISO_OS_BIN:=$(ISO_DIR)/boot/first_os.bin
+ISO_OS_BIN:=$(ISO_DIR)/boot/first_os.elf
 ISO_GRUB_CFG:=$(ISO_DIR)/boot/grub/grub.cfg
 
 .PHONY: all build qemu clean bootable
