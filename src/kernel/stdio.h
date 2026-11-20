@@ -35,7 +35,7 @@ int favl(int fd);
 int fclose(int fd);
 int fflush(int fd);
 
-void file_init(void);
+void stdio_init(void);
 
 int printf(const char *format, ...);
 int vprintf(const char *format, va_list ap);

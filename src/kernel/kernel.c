@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdnoreturn.h>
+#include "stdio.h"
 #include "framebuffer.h"
 #include "limine.h"
 #include "kernel.h"
@@ -22,11 +23,20 @@ noreturn void hcf() {
 }
 
 void kernel_main() {
-    if (!LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision)) {
+    if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false) {
         hcf();
     }
 
+    stdio_init();
     fb_init();
+
+    printf("Hello, world!\n");
+    fflush(STDOUT);
+
+    for (uint8_t i = 0;; i++) {
+        printf("%u\n", i);
+        fflush(STDOUT);
+    }
 
     hcf();
 }

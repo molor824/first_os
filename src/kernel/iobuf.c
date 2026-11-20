@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include "iobuf.h"
 #include "default_font.h"
+#include "framebuffer.h"
 
 char buffer[IO_BUF_SIZE];
 size_t buf_position = 0;
@@ -58,8 +59,8 @@ void buf_puts(const char *s) {
     }
 }
 void buf_flush(void) {
-    size_t fb_width = framebuffer->width;
-    size_t fb_height = framebuffer->height;
+    size_t fb_width = framebuffer.width;
+    size_t fb_height = framebuffer.height;
     size_t text_rows = fb_height / FONT_LINE_HEIGHT;
     size_t text_cols = fb_width / FONT_ADVANCE;
 
@@ -102,8 +103,13 @@ void buf_flush(void) {
             row--;
             continue;
         }
-        for (; column < text_cols; column++) {
-            fb_write_char((point_t){.x = column * FONT_ADVANCE, .y = row * FONT_LINE_HEIGHT}, 0, buf_foreground, buf_background);
-        }
+        fb_fill_rect(
+            (point_t){.x = column * FONT_ADVANCE, .y = row * FONT_LINE_HEIGHT},
+            (point_t){.x = (text_cols + 1) * FONT_ADVANCE, .y = (row + 1) * FONT_LINE_HEIGHT},
+            (color_t){}
+        );
+        // for (; column < text_cols; column++) {
+        //     fb_write_char((point_t){.x = column * FONT_ADVANCE, .y = row * FONT_LINE_HEIGHT}, 0, buf_foreground, buf_background);
+        // }
     }
 }
