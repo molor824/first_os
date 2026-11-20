@@ -30,13 +30,8 @@ void kernel_main() {
     stdio_init();
     fb_init();
 
-    printf("Hello, world!\n");
+    printf("Hello, world!\nWelcome to my FirstOS!\n");
     fflush(STDOUT);
-
-    for (uint8_t i = 0;; i++) {
-        printf("%u\n", i);
-        fflush(STDOUT);
-    }
 
     hcf();
 }
