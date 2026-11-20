@@ -58,8 +58,8 @@ void buf_puts(const char *s) {
     }
 }
 void buf_flush(void) {
-    size_t fb_width = framebuffer_info->width;
-    size_t fb_height = framebuffer_info->height;
+    size_t fb_width = framebuffer->width;
+    size_t fb_height = framebuffer->height;
     size_t text_rows = fb_height / FONT_LINE_HEIGHT;
     size_t text_cols = fb_width / FONT_ADVANCE;
 

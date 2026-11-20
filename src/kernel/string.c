@@ -33,33 +33,14 @@ char *str_unpack32(unsigned packed, char *str) {
         #error "Unknown endianness"
 #endif
 
-void* memcpy(void *dst, const void *src, size_t n) {
+void* memcpy(void *restrict dst, const void *restrict src, size_t n) {
     uint8_t *pdst = dst;
     const uint8_t *psrc = src;
-    uint8_t *pend = &pdst[n];
-    while (pdst < pend) {
-        if ((uintptr_t)pdst % _Alignof(uint32_t) == 0 && (uintptr_t)psrc % _Alignof(uint32_t) == 0) {
-            goto aligned_loop;
-        }
-        *pdst = *psrc;
-        pdst++;
-        psrc++;
+
+    for (size_t i = 0; i < n; i++) {
+        pdst[i] = psrc[i];
     }
-    return dst;
-aligned_loop:;
-    while (pdst < pend) {
-        if ((uintptr_t)pend - (uintptr_t)pdst < sizeof(uint32_t)) goto end_loop;
-        *(uint32_t*)pdst = *(uint32_t*)psrc;
-        pdst += sizeof(uint32_t);
-        psrc += sizeof(uint32_t);
-    }
-    return dst;
-end_loop:
-    while (pdst < pend) {
-        *pdst = *psrc;
-        pdst++;
-        psrc++;
-    }
+
     return dst;
 }
 void* memmove(void *dst, const void *src, size_t n) {
@@ -79,28 +60,12 @@ void* memmove(void *dst, const void *src, size_t n) {
     return dst;
 }
 void* memset(void *s, int c, size_t n) {
-    uint8_t ch = c;
-    uint8_t *ps = s;
-    uint8_t *end = &ps[n];
-    while (ps < end) {
-        if ((uintptr_t)ps % _Alignof(uint32_t) == 0) goto packed_loop;
-        *ps = ch;
-        ps++;
+    uint8_t *p = s;
+
+    for (size_t i = 0; i < n; i++) {
+        p[i] = (uint8_t)c;
     }
-    return s;
-packed_loop:;
-    uint32_t packed = ch | ch << 8 | ch << 16 | ch << 24;
-    while (ps < end) {
-        if ((uintptr_t)end - (uintptr_t)ps < sizeof(uint32_t)) goto end_loop;
-        *ps = packed;
-        ps += sizeof(uint32_t);
-    }
-    return s;
-end_loop:
-    while (ps < end) {
-        *ps = ch;
-        ps++;
-    }
+
     return s;
 }
 size_t strlen(const void* s) {

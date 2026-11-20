@@ -1,26 +1,8 @@
 #pragma once
 
 #include "kernel.h"
+#include "limine.h"
 #include <stdint.h>
-
-typedef struct {
-    boot_tag_t tag;
-    uint8_t *address;
-    uint32_t address_high;
-    uint32_t pitch;
-    uint32_t width;
-    uint32_t height;
-    uint8_t bpp;
-    uint8_t type;
-    uint8_t reserved;
-    uint8_t padding;
-    uint8_t red_field_position;
-    uint8_t red_mask_size;
-    uint8_t green_field_position;
-    uint8_t green_mask_size;
-    uint8_t blue_field_position;
-    uint8_t blue_mask_size;
-} __attribute__((packed)) framebuffer_info_t;
 
 typedef struct {
     uint32_t x, y;
@@ -30,7 +12,7 @@ typedef struct {
     uint8_t r, g, b;
 } color_t;
 
-extern framebuffer_info_t *framebuffer_info;
+extern struct limine_framebuffer *framebuffer;
 
 extern void fb_clear(void);
 extern void fb_pixel_map_color(uint8_t *pixel, color_t color);

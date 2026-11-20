@@ -1,2 +1,7 @@
-build
+bin/
+obj/
+iso/
 .vscode
+*.iso
+limine-binary.tar.gz
+limine-binary/
