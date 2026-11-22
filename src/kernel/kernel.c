@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdnoreturn.h>
+#include "mem.h"
 #include "stdio.h"
 #include "framebuffer.h"
 #include "limine.h"
@@ -27,11 +28,12 @@ void kernel_main() {
         hcf();
     }
 
-    stdio_init();
     fb_init();
+    stdio_init();
+    mem_init();
 
     printf("Hello, world!\nWelcome to my FirstOS!\n");
-    fflush(STDOUT);
+    flush(STDOUT);
 
     hcf();
 }

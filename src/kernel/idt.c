@@ -25,7 +25,7 @@ void exception_handler(int_registers_t *regs) {
             printf("EXCEPTION: %d at %x\n", regs->vector, regs->eip);
             break;
     }
-    fflush(STDOUT);
+    flush(STDOUT);
 }
 void irq_handler(int_registers_t *regs) {
     size_t irq = regs->vector - MASTER_VECTOR_OFFSET;

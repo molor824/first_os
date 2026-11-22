@@ -158,7 +158,7 @@ limine-binary.tar.gz:
 limine-binary: limine-binary.tar.gz
 	gunzip < limine-binary.tar.gz | tar -xf -
 	make -C limine-binary
-$(OUTPUT).iso: all limine-binary
+$(OUTPUT).iso: bin/$(OUTPUT) limine-binary
 	mkdir -p iso/boot/
 	cp -v bin/$(OUTPUT) iso/boot/
 	mkdir -p iso/boot/limine/
@@ -176,3 +176,8 @@ $(OUTPUT).iso: all limine-binary
 
 	# Install Limine stage 1 and 2 for legacy BIOS boot.
 	./limine-binary/limine bios-install $(OUTPUT).iso
+
+.PHONY: qemu
+
+qemu: iso
+	qemu-system-x86_64 -cdrom $(OUTPUT).iso -m 1024
